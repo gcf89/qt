@@ -6,8 +6,9 @@
 #include "ui_mainwindow.h"
 
 #include "DoubleProgressBar.h"
+#include "SingleProgressBar.h"
 
-void MainWindow::run()
+void MainWindow::runQProgressBar()
 {
   int max = 10000;
 
@@ -29,7 +30,32 @@ void MainWindow::run()
   delete f;
 }
 
-void MainWindow::run2()
+void MainWindow::runSingleProgressbar()
+{
+  int max = 10;
+
+  auto progress = new SingleProgressBar();
+  progress->setFixedSize(220, 80);
+  // hide close button by removing frame (Qt::WindowTitleHint-only not works)
+  progress->setWindowFlags(Qt::FramelessWindowHint);
+  // block input to all windows
+  progress->setWindowModality(Qt::ApplicationModal);
+  progress->show();
+
+  progress->ProgressBar()->setMaximum(max);
+  for (int i=0; i<max; ++i) {
+    progress->ProgressBar()->setValue(i);
+    progress->SetLable(GetPrimaryText(i, max));
+    usleep(0.5 * 1000 * 1000);
+    qApp->processEvents();
+  }
+
+  // clean up
+  progress->close();
+  delete progress;
+}
+
+void MainWindow::runDoubleProgressBar()
 {
   int max1 = 10;
   int max2 = max1 / 2;

@@ -14,10 +14,13 @@ TEMPLATE = app
 
 SOURCES += main.cpp\
         mainwindow.cpp \
-    DoubleProgressBar.cpp
+    DoubleProgressBar.cpp \
+    SingleProgressBar.cpp
 
 HEADERS  += mainwindow.h \
-    DoubleProgressBar.h
+    DoubleProgressBar.h \
+    SingleProgressBar.h
 
 FORMS    += mainwindow.ui \
-    DoubleProgressBar.ui
+    DoubleProgressBar.ui \
+    SingleProgressBar.ui

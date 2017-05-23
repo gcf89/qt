@@ -12,8 +12,9 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    void run();
-    void run2();
+    void runQProgressBar();
+    void runSingleProgressbar();
+    void runDoubleProgressBar();
 
 private:
     QString GetPrimaryText(int cur, int max) const;
