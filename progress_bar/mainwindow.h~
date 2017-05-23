@@ -15,10 +15,6 @@ public:
     void run();
     void run2();
 
-private:
-    QString GetPrimaryText(int cur, int max) const;
-    QString GetSecondaryText(int cur, int max) const;
-
 public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();

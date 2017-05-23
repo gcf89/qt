@@ -14,6 +14,8 @@ class DoubleProgressBar : public QWidget
 public:
   QProgressBar* PrimaryProgressBar() const;
   QProgressBar* SecondaryProgressBar() const;
+  void SetPrimaryLable(QString text);
+  void SetSecondaryLable(QString text);
 
 public:
   explicit DoubleProgressBar(QWidget *parent = 0);

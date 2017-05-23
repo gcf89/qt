@@ -35,7 +35,7 @@ void MainWindow::run2()
   int max2 = max1 / 2;
 
   DoubleProgressBar* f = new DoubleProgressBar();
-  f->setFixedSize(220, 80);
+  f->setFixedSize(220, 120);
   // hide close button by removing frame (Qt::WindowTitleHint-only not works)
   f->setWindowFlags(Qt::FramelessWindowHint);
   // block input to all windows
@@ -47,8 +47,10 @@ void MainWindow::run2()
 
   for (int i=0; i<max1; ++i) {
     f->PrimaryProgressBar()->setValue(i);
+    f->SetPrimaryLable(GetPrimaryText(i, max1));
     for (int j=0; j<max2; ++j) {
       f->SecondaryProgressBar()->setValue(j);
+      f->SetSecondaryLable(GetSecondaryText(j, max2));
       qApp->processEvents();
       usleep(0.5 * 1000 * 1000);
     }
@@ -57,6 +59,16 @@ void MainWindow::run2()
 
   f->close();
   delete f;
+}
+
+QString MainWindow::GetPrimaryText(int cur, int max) const
+{
+  return trUtf8("Всего обработано: %0/%1").arg(cur).arg(max);
+}
+
+QString MainWindow::GetSecondaryText(int cur, int max) const
+{
+  return trUtf8("Всего обработано: %0/%1").arg(cur).arg(max);
 }
 
 

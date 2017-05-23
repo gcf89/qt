@@ -12,6 +12,17 @@ QProgressBar* DoubleProgressBar::SecondaryProgressBar() const
   return ui->progressBarSecondary;
 }
 
+void DoubleProgressBar::SetPrimaryLable(QString text)
+{
+  ui->labelPrimary->setText(text);
+}
+
+void DoubleProgressBar::SetSecondaryLable(QString text)
+{
+  ui->labelSecondary->setText(text);
+}
+
+
 DoubleProgressBar::DoubleProgressBar(QWidget *parent) :
   QWidget(parent),
   ui(new Ui::DoubleProgressBar)
