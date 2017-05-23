@@ -5,7 +5,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
-#include "form.h"
+#include "DoubleProgressBar.h"
 
 void MainWindow::run()
 {
@@ -34,7 +34,7 @@ void MainWindow::run2()
   int max1 = 10;
   int max2 = max1 / 2;
 
-  Form* f = new Form();
+  DoubleProgressBar* f = new DoubleProgressBar();
   f->setFixedSize(220, 80);
   // hide close button by removing frame (Qt::WindowTitleHint-only not works)
   f->setWindowFlags(Qt::FramelessWindowHint);

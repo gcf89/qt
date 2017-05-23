@@ -1,5 +1,4 @@
-#ifndef FORM_H
-#define FORM_H
+#pragma once
 
 #include <QWidget>
 #include <QProgressBar>
@@ -8,7 +7,7 @@ namespace Ui {
 class Form;
 }
 
-class Form : public QWidget
+class DoubleProgressBar : public QWidget
 {
   Q_OBJECT
 
@@ -17,11 +16,9 @@ public:
   QProgressBar* SecondaryProgressBar() const;
 
 public:
-  explicit Form(QWidget *parent = 0);
-  ~Form();
+  explicit DoubleProgressBar(QWidget *parent = 0);
+  ~DoubleProgressBar();
 
 private:
   Ui::Form *ui;
 };
-
-#endif // FORM_H

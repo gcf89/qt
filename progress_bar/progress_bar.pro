@@ -14,10 +14,10 @@ TEMPLATE = app
 
 SOURCES += main.cpp\
         mainwindow.cpp \
-    form.cpp
+    DoubleProgressBar.cpp
 
 HEADERS  += mainwindow.h \
-    form.h
+    DoubleProgressBar.h
 
 FORMS    += mainwindow.ui \
     form.ui
