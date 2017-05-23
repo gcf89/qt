@@ -1,5 +1,5 @@
 #include "DoubleProgressBar.h"
-#include "ui_form.h"
+#include "ui_DoubleProgressBar.h"
 
 
 QProgressBar* DoubleProgressBar::PrimaryProgressBar() const
@@ -14,7 +14,7 @@ QProgressBar* DoubleProgressBar::SecondaryProgressBar() const
 
 DoubleProgressBar::DoubleProgressBar(QWidget *parent) :
   QWidget(parent),
-  ui(new Ui::Form)
+  ui(new Ui::DoubleProgressBar)
 {
   ui->setupUi(this);
 }

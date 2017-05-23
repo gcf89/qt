@@ -4,7 +4,7 @@
 #include <QProgressBar>
 
 namespace Ui {
-class Form;
+class DoubleProgressBar;
 }
 
 class DoubleProgressBar : public QWidget
@@ -20,5 +20,5 @@ public:
   ~DoubleProgressBar();
 
 private:
-  Ui::Form *ui;
+  Ui::DoubleProgressBar *ui;
 };

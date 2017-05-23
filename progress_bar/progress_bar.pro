@@ -20,4 +20,4 @@ HEADERS  += mainwindow.h \
     DoubleProgressBar.h
 
 FORMS    += mainwindow.ui \
-    form.ui
+    DoubleProgressBar.ui
