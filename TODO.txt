@@ -1,3 +1,4 @@
-TODO:
+[plibs C++/Qt] TODO:
 
 - icons lib import problem
+- qml desktop/android simple file manager
