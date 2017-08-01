@@ -1,0 +1,11 @@
+LIBRARY	LockScr
+DESCRIPTION		'Keyboard and Mouse Hook'
+
+EXPORTS
+	SetKeyboardHook
+	SetMouseHook
+	KeyProc	
+	MouseProc
+
+SECTIONS
+	.hdata	READ WRITE SHARED
