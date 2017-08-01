@@ -34,6 +34,11 @@ class Widget : public QWidget
 
   QString               mSourcePath;
 
+  QStringList mGoodHardwareSNs;
+  QStringList mBadHardwareSNs;
+
+  bool mIsLocked;
+
 #ifdef Q_OS_UNIX
   Display *dpy;
 #endif
@@ -58,6 +63,8 @@ private:
   void NewGuiEnabled(bool enabled);
 
   void CenterWindow();
+
+  void ConsiderLock();
 
 private slots:
   void onTargetFileChanged();

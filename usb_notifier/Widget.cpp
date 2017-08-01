@@ -170,11 +170,21 @@ bool Widget::Parse(QString data, qint64 filesize)
 //                                        QSystemTrayIcon::Information,
 //                                        2000);
 
-                  if ( text.section(":",1,1).replace(0,1,"") == "lock" ) {
-                    LockSystem();
-                  } else if ( text.section(":",1,1).replace(0,1,"") == "unlock" ) {
-                    UnlockSystem();
+                  QString sn = serialNumber.section(":",1,1).replace(0,1,"");
+                  QString msg = text.section(":",1,1).replace(0,1,"");
+
+
+                  if ( msg == "gr" ) {
+                    mGoodHardwareSNs << sn;
+                  } else if ( msg == "gi" ) {
+                    mGoodHardwareSNs.removeOne(sn);
+                  } else if ( msg == "bi" ) {
+                    mBadHardwareSNs << sn;
+                  } else if ( msg == "br" ) {
+                    mBadHardwareSNs.removeOne(sn);
                   }
+
+                  ConsiderLock();
 
                   return true;
 
@@ -243,7 +253,6 @@ void Widget::OldGuiEnabled(bool enabled)
 void Widget::NewGuiEnabled(bool enabled)
 {
   ui->labelWarn->setVisible(enabled);
-  ui->labelWarn->setText(QString::fromUtf8("Устройство заблокировано"));
   setWindowFlags(Qt::FramelessWindowHint);
   setStyleSheet("QLabel { background-color: red;"
                 "color: black; }");
@@ -259,6 +268,42 @@ void Widget::CenterWindow()
   center.setX(x);
   center.setY(y);
   this->move(center);
+}
+
+void Widget::ConsiderLock()
+{
+  QString msg;
+  bool needLock = false;
+
+  if (!mGoodHardwareSNs.isEmpty() || !mBadHardwareSNs.isEmpty()) {
+    msg = tr("Комплект нарушен.");
+    if (!mGoodHardwareSNs.isEmpty()) {
+      msg.append(tr("\n\nСписок извлеченного основного оборудования:"));
+    }
+    for (auto it=mGoodHardwareSNs.constBegin(); it!=mGoodHardwareSNs.constEnd(); ++it) {
+      msg.append("\n").append(*it);
+    }
+
+    if (!mBadHardwareSNs.isEmpty()) {
+      msg.append(tr("\n\nСписок вставленных запрещенных устройств:"));
+    }
+    for (auto it=mBadHardwareSNs.constBegin(); it!=mBadHardwareSNs.constEnd(); ++it) {
+      msg.append("\n").append(*it);
+    }
+
+    needLock = true;
+
+  } else {
+    msg = QString::fromUtf8("Комплект восстановлен.");
+  }
+
+  ui->labelWarn->setText(msg);
+
+  if (needLock) {
+    LockSystem();
+  } else {
+    UnlockSystem();
+  }
 }
 
 void Widget::onTargetFileChanged()
@@ -321,59 +366,68 @@ void Widget::iconActivated(QSystemTrayIcon::ActivationReason reason)
 
 void Widget::UnlockSystem()
 {
-#ifdef Q_OS_WIN32
-  UnlockSpecialKeys(&fuiPreviousState);
+  mIsLocked = false;
 
-  UnhookWindowsHookEx(hKeyHook);
-  UnhookWindowsHookEx(hMouseHook);
-#endif
+//#ifdef Q_OS_WIN32
+//  UnlockSpecialKeys(&fuiPreviousState);
 
-#ifdef Q_OS_UNIX
-  XUngrabKeyboard(dpy, CurrentTime);
-  XUngrabPointer(dpy, CurrentTime);
+//  UnhookWindowsHookEx(hKeyHook);
+//  UnhookWindowsHookEx(hMouseHook);
+//#endif
 
-  if (XCloseDisplay(dpy)) {
-     qDebug() << Q_FUNC_INFO << "error XCloseDisplay";
-  }
-#endif
+//#ifdef Q_OS_UNIX
+//  XUngrabKeyboard(dpy, CurrentTime);
+//  XUngrabPointer(dpy, CurrentTime);
 
-  hide();
+//  if (XCloseDisplay(dpy)) {
+//     qDebug() << Q_FUNC_INFO << "error XCloseDisplay";
+//  }
+//#endif
+
+
   trayIcon->showMessage(QString::fromUtf8("Внимание!"),
                         QString::fromUtf8("Система разблокирована!"),
                         QSystemTrayIcon::Information,
                         2000);
+
+//  hide();
+  QTimer::singleShot(1500, this, SLOT(hide()));
 }
 
 void Widget::LockSystem()
 {
-#ifdef Q_OS_WIN32
-  LockSpecialKeys(&fuiPreviousState);
+  if (!mIsLocked) {
+    mIsLocked = true;
 
-//  hKeyHook = SetWindowsHookEx(WH_KEYBOARD, KeyProc, NULL, 0);
-  hKeyHook = SetWindowsHookEx(WH_KEYBOARD_LL, (KeyProc), 0, 0);
-  hMouseHook = SetWindowsHookEx(WH_MOUSE_LL, (MouseProc), NULL, 0);
-#endif
+//#ifdef Q_OS_WIN32
+//    LockSpecialKeys(&fuiPreviousState);
 
-#ifdef Q_OS_UNIX
-  if (NULL==(dpy=XOpenDisplay(NULL))) {
-    qDebug() << Q_FUNC_INFO << "error XOpenDisplay";
+//    hKeyHook = SetWindowsHookEx(WH_KEYBOARD_LL, (KeyProc), 0, 0);
+//    hMouseHook = SetWindowsHookEx(WH_MOUSE_LL, (MouseProc), NULL, 0);
+//#endif
+
+//#ifdef Q_OS_UNIX
+//    if (NULL==(dpy=XOpenDisplay(NULL))) {
+//      qDebug() << Q_FUNC_INFO << "error XOpenDisplay";
+//    }
+
+//    XGrabKeyboard(dpy, DefaultRootWindow(dpy), true, GrabModeAsync, GrabModeAsync, CurrentTime);
+
+//    XGrabPointer(dpy, DefaultRootWindow(dpy), 0, 0, 0, 0, DefaultRootWindow(dpy), None, CurrentTime);
+//#endif
+
+
+
+    show();
+    activateWindow();
+
+    trayIcon->showMessage(QString::fromUtf8("Внимание!"),
+                          QString::fromUtf8("Система заблокирована! Откл. через 7с"),
+                          QSystemTrayIcon::Information,
+                          2000);
+
+//    QTimer::singleShot(7000, this, SLOT(UnlockSystem()));
   }
-
-  XGrabKeyboard(dpy, DefaultRootWindow(dpy), true, GrabModeAsync, GrabModeAsync, CurrentTime);
-
-  XGrabPointer(dpy, DefaultRootWindow(dpy), 0, 0, 0, 0, DefaultRootWindow(dpy), None, CurrentTime);
-#endif
-
-  show();
-//  raise();
-  activateWindow();
-
-  trayIcon->showMessage(QString::fromUtf8("Внимание!"),
-                        QString::fromUtf8("Система заблокирована! Откл. через 7с"),
-                        QSystemTrayIcon::Information,
-                        2000);
-
-  QTimer::singleShot(7000, this, SLOT(UnlockSystem()));
 }
 
 
@@ -385,6 +439,7 @@ Widget::Widget(QWidget *parent)
 #ifdef Q_OS_UNIX
   , dpy(NULL)
 #endif
+  , mIsLocked(false)
 {
   ui->setupUi(this);
 
@@ -393,10 +448,6 @@ Widget::Widget(QWidget *parent)
 
   CenterWindow();
 
-#ifndef DBG
-  ui->label->setVisible(false);
-#endif
-
   CreateActions();
   CreateTrayIcon();
 
@@ -404,13 +455,15 @@ Widget::Widget(QWidget *parent)
 
   trayIcon->show();
 
-
   OldGuiEnabled(false);
   NewGuiEnabled(true);
 
   QTimer::singleShot(0, this, SLOT(hide()));
 
 //  LockSystem();
+#ifndef DBG
+  ui->label->setVisible(false);
+#endif
 }
 
 Widget::~Widget()
