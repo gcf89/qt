@@ -57,6 +57,8 @@ private:
   void OldGuiEnabled(bool enabled);
   void NewGuiEnabled(bool enabled);
 
+  void CenterWindow();
+
 private slots:
   void onTargetFileChanged();
   void on_pushButton_clicked();

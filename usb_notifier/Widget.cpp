@@ -247,6 +247,18 @@ void Widget::NewGuiEnabled(bool enabled)
                 "color: #c41010; }");
 }
 
+void Widget::CenterWindow()
+{
+  QDesktopWidget desktop;
+  QRect rect = desktop.availableGeometry(desktop.primaryScreen()); // прямоугольник с размерами экрана
+  QPoint center = rect.center(); //координаты центра экрана
+  int x = center.x() - (this->width()/2);  // учитываем половину ширины окна
+  int y = center.y() - (this->height()/2); // .. половину высоты
+  center.setX(x);
+  center.setY(y);
+  this->move(center);
+}
+
 void Widget::onTargetFileChanged()
 {
   QFile f(mSourcePath);
@@ -341,9 +353,9 @@ void Widget::LockSystem()
 #endif
 
 #ifdef Q_OS_UNIX
-  XEvent ev;
-  char *s;
-  unsigned int kc;
+//  XEvent ev;
+//  char *s;
+//  unsigned int kc;
 
   if (NULL==(dpy=XOpenDisplay(NULL))) {
     qDebug() << Q_FUNC_INFO << "error XOpenDisplay";
@@ -374,6 +386,7 @@ Widget::Widget(QWidget *parent)
   ui->setupUi(this);
 
   resize(QDesktopWidget().availableGeometry(this).size() * 0.3);
+  CenterWindow();
 
 #ifndef DBG
   ui->label->setVisible(false);
