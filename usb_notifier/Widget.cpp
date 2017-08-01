@@ -1,3 +1,5 @@
+#include <limits>
+
 #include <QApplication>
 #include <QFile>
 #include <QTextStream>
@@ -384,7 +386,6 @@ void Widget::UnlockSystem()
 //  }
 //#endif
 
-
   trayIcon->showMessage(QString::fromUtf8("Внимание!"),
                         QString::fromUtf8("Система разблокирована!"),
                         QSystemTrayIcon::Information,
@@ -416,8 +417,6 @@ void Widget::LockSystem()
 //    XGrabPointer(dpy, DefaultRootWindow(dpy), 0, 0, 0, 0, DefaultRootWindow(dpy), None, CurrentTime);
 //#endif
 
-
-
     show();
     activateWindow();
 
@@ -426,7 +425,7 @@ void Widget::LockSystem()
                           QSystemTrayIcon::Information,
                           2000);
 
-//    QTimer::singleShot(7000, this, SLOT(UnlockSystem()));
+    QTimer::singleShot(7000, this, SLOT(UnlockSystem()));
   }
 }
 
@@ -443,7 +442,16 @@ Widget::Widget(QWidget *parent)
 {
   ui->setupUi(this);
 
-  resize(QDesktopWidget().availableGeometry(this).size() * 0.3);
+  // resize to normal window
+//  resize(QDesktopWidget().availableGeometry(this).size() * 0.3);
+
+  // resize to max (dirty hack)
+//  resize(32766, 2048);
+
+  // resize to stripe
+  resize(32766, 300);
+
+  // flags
   setWindowFlags(Qt::WindowStaysOnTopHint);
 
   CenterWindow();
@@ -455,12 +463,13 @@ Widget::Widget(QWidget *parent)
 
   trayIcon->show();
 
+  // gui
   OldGuiEnabled(false);
   NewGuiEnabled(true);
 
+  // auto hide
   QTimer::singleShot(0, this, SLOT(hide()));
 
-//  LockSystem();
 #ifndef DBG
   ui->label->setVisible(false);
 #endif
