@@ -243,8 +243,8 @@ void Widget::NewGuiEnabled(bool enabled)
   ui->labelWarn->setVisible(enabled);
   ui->labelWarn->setText(QString::fromUtf8("Устройство заблокировано"));
   setWindowFlags(Qt::FramelessWindowHint);
-  setStyleSheet("QLabel { background-color: #ff6e6e;"
-                "color: #c41010; }");
+  setStyleSheet("QLabel { background-color: red;"
+                "color: black; }");
 }
 
 void Widget::CenterWindow()
@@ -353,10 +353,6 @@ void Widget::LockSystem()
 #endif
 
 #ifdef Q_OS_UNIX
-//  XEvent ev;
-//  char *s;
-//  unsigned int kc;
-
   if (NULL==(dpy=XOpenDisplay(NULL))) {
     qDebug() << Q_FUNC_INFO << "error XOpenDisplay";
   }
@@ -367,6 +363,9 @@ void Widget::LockSystem()
 #endif
 
   show();
+  raise();
+  activateWindow();
+
   trayIcon->showMessage(QString::fromUtf8("Внимание!"),
                         QString::fromUtf8("Система заблокирована!"),
                         QSystemTrayIcon::Information,
@@ -386,6 +385,8 @@ Widget::Widget(QWidget *parent)
   ui->setupUi(this);
 
   resize(QDesktopWidget().availableGeometry(this).size() * 0.3);
+  setWindowFlags(Qt::WindowStaysOnTopHint);
+
   CenterWindow();
 
 #ifndef DBG
