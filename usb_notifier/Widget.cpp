@@ -1,16 +1,12 @@
 #include <QApplication>
 #include <QFile>
 #include <QTextStream>
-//#include <QJsonDocument>
-//#include <QJsonObject>
-//#include <QJsonArray>
-//#include <QJsonParseError>
-//#include <QJsonValue>
 #include <QMessageBox>
 #include <QTextCodec>
 #include <QTimer>
 #include <QThread>
 #include <QStyleOption>
+#include <QDesktopWidget>
 
 #ifdef Q_OS_WIN32
 #include <windows.h>
@@ -22,10 +18,16 @@ HHOOK hMouseHook = NULL;
 
 LRESULT CALLBACK KeyProc(int nCode, WPARAM wParam, LPARAM lParam)
 {
+  Q_UNUSED(nCode)
+  Q_UNUSED(wParam)
+  Q_UNUSED(lParam)
   return -1;
 }
 LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam)
 {
+  Q_UNUSED(nCode)
+  Q_UNUSED(wParam)
+  Q_UNUSED(lParam)
   return -1;
 }
 
@@ -119,6 +121,8 @@ void Widget::RunWatcher(const QString& path)
 
 bool Widget::Parse(QString data, qint64 filesize)
 {
+  Q_UNUSED(filesize)
+
   QString id;
   QString serialNumber;
   QString text;
@@ -170,17 +174,6 @@ bool Widget::Parse(QString data, qint64 filesize)
 //                    UnblockSystem();
 //                  }
 
-                  // if bad event
-                  // grab keyboard
-                  // grab mouse
-                  // show message
-
-                  // if good event
-                  // reverse
-
-                  // for testing
-                  // if good, disable lock hook
-
                   return true;
 
                 } else {
@@ -212,16 +205,16 @@ bool Widget::Parse(QString data, qint64 filesize)
 
 void Widget::CreateActions()
 {
-  minimizeAction = new QAction(tr("Mi&nimize"), this);
+  minimizeAction = new QAction(tr("Скрыть"), this);
   connect(minimizeAction, &QAction::triggered, this, &QWidget::hide);
 
-  maximizeAction = new QAction(tr("Ma&ximize"), this);
+  maximizeAction = new QAction(tr("Развернуть"), this);
   connect(maximizeAction, &QAction::triggered, this, &QWidget::showMaximized);
 
-  restoreAction = new QAction(tr("&Restore"), this);
+  restoreAction = new QAction(tr("Восстановить"), this);
   connect(restoreAction, &QAction::triggered, this, &QWidget::showNormal);
 
-  quitAction = new QAction(tr("&Quit"), this);
+  quitAction = new QAction(tr("Выход"), this);
   connect(quitAction, &QAction::triggered, qApp, &QCoreApplication::quit);
 }
 
@@ -297,6 +290,8 @@ void Widget::on_pushButton_clicked()
 
 void Widget::iconActivated(QSystemTrayIcon::ActivationReason reason)
 {
+  Q_UNUSED(reason)
+
 //  switch (reason) {
 //  case QSystemTrayIcon::Trigger:
 //  case QSystemTrayIcon::DoubleClick:
@@ -346,79 +341,17 @@ void Widget::LockSystem()
 #endif
 
 #ifdef Q_OS_UNIX
-      XEvent ev;
-      char *s;
-      unsigned int kc;
+  XEvent ev;
+  char *s;
+  unsigned int kc;
 
-      if (NULL==(dpy=XOpenDisplay(NULL))) {
-         qDebug() << Q_FUNC_INFO << "error XOpenDisplay";
-      }
+  if (NULL==(dpy=XOpenDisplay(NULL))) {
+    qDebug() << Q_FUNC_INFO << "error XOpenDisplay";
+  }
 
-      XGrabKeyboard(dpy, DefaultRootWindow(dpy),
-                    true, GrabModeAsync, GrabModeAsync, CurrentTime);
+  XGrabKeyboard(dpy, DefaultRootWindow(dpy), true, GrabModeAsync, GrabModeAsync, CurrentTime);
 
-//      XGrabPointer(dpy, DefaultRootWindow(dpy), false, 0,  GrabModeSync);
-      XGrabPointer(dpy, DefaultRootWindow(dpy), 0, 0, 0, 0, DefaultRootWindow(dpy), None, CurrentTime);
-
-//      bool ctrlmodified = false;
-//      bool shiftmodified = false;
-
-//      while(hk->isActive()) {
-//         XNextEvent(dpy, &ev);
-//         switch (ev.type) {
-//            case KeyPress:
-//               kc = ((XKeyPressedEvent*)&ev)->keycode;
-//               s = XKeysymToString(XKeycodeToKeysym(dpy, kc, 0));
-//               qDebug() << Q_FUNC_INFO << s;
-//               if (!strcmp(s, "Control_L")) ctrlmodified=true;
-//               if (!strcmp(s, "Control_R")) ctrlmodified=true;
-//               if (!strcmp(s, "Shift_L")) shiftmodified=true;
-//               if (!strcmp(s, "Shift_R")) shiftmodified=true;
-
-//               if (!strcmp(s, "Print") && ctrlmodified && shiftmodified) {
-//                  hk->press(HookKeybord::Print | HookKeybord::Shift | HookKeybord::Ctrl);
-//                  continue;
-//               }
-
-//               if (!strcmp(s, "Print") && ctrlmodified) {
-//                  hk->press(HookKeybord::Print | HookKeybord::Ctrl);
-//                  continue;
-//               }
-
-//               if (!strcmp(s, "Print") && shiftmodified) {
-//                  hk->press(HookKeybord::Print | HookKeybord::Shift);
-//                  continue;
-//               }
-
-//               if (!strcmp(s, "Print")) {
-//                  hk->press(HookKeybord::Print);
-//                  continue;
-//               }
-
-//               XSendEvent(dpy, 0, false, KeyPressMask,&ev);
-//               break;
-//            case Expose:
-//                  while (XCheckTypedEvent(dpy, Expose, &ev)) /* empty body */ ;
-//               break;
-//            case ButtonPress:
-//            case ButtonRelease:
-//            case KeyRelease:
-//               kc = ((XKeyReleasedEvent*)&ev)->keycode;
-//               s = XKeysymToString(XKeycodeToKeysym(dpy, kc, 0));
-
-
-//               if (!strcmp(s, "Control_L")) ctrlmodified=false;
-//               if (!strcmp(s, "Control_R")) ctrlmodified=false;
-//               if (!strcmp(s, "Shift_L")) shiftmodified=false;
-//               if (!strcmp(s, "Shift_R")) shiftmodified=false;
-//            case MotionNotify:
-//            case ConfigureNotify:
-//            default:
-//               break;
-//         }
-//      }
-
-
+  XGrabPointer(dpy, DefaultRootWindow(dpy), 0, 0, 0, 0, DefaultRootWindow(dpy), None, CurrentTime);
 #endif
 
   show();
@@ -434,9 +367,13 @@ Widget::Widget(QWidget *parent)
   , ui(new Ui::Widget)
   , mFileWatcher(new QFileSystemWatcher())
   , mFilePos(0)
+#ifdef Q_OS_UNIX
   , dpy(NULL)
+#endif
 {
   ui->setupUi(this);
+
+  resize(QDesktopWidget().availableGeometry(this).size() * 0.3);
 
 #ifndef DBG
   ui->label->setVisible(false);

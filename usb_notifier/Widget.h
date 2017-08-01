@@ -34,7 +34,9 @@ class Widget : public QWidget
 
   QString               mSourcePath;
 
+#ifdef Q_OS_UNIX
   Display *dpy;
+#endif
 
   Q_OBJECT
 
