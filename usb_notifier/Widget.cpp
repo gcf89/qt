@@ -418,6 +418,7 @@ void Widget::LockSystem()
 //#endif
 
     show();
+//    showMaximized();
     activateWindow();
 
     trayIcon->showMessage(QString::fromUtf8("Внимание!"),
@@ -425,7 +426,7 @@ void Widget::LockSystem()
                           QSystemTrayIcon::Information,
                           2000);
 
-    QTimer::singleShot(7000, this, SLOT(UnlockSystem()));
+//    QTimer::singleShot(7000, this, SLOT(UnlockSystem()));
   }
 }
 
@@ -449,7 +450,16 @@ Widget::Widget(QWidget *parent)
 //  resize(32766, 2048);
 
   // resize to stripe
-  resize(32766, 300);
+//  resize(32766, 300);
+
+  int width = QApplication::desktop()->screenGeometry().width();
+  int height = QApplication::desktop()->screenGeometry().height();
+  int scrCnt = QApplication::desktop()->screenCount();
+
+//  resize(width * scrCnt, 2 * height);
+  resize(width * scrCnt, 300);
+
+  qDebug() << width << scrCnt << height;
 
   // flags
   setWindowFlags(Qt::WindowStaysOnTopHint);

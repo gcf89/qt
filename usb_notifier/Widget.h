@@ -37,11 +37,11 @@ class Widget : public QWidget
   QStringList mGoodHardwareSNs;
   QStringList mBadHardwareSNs;
 
-  bool mIsLocked;
-
 #ifdef Q_OS_UNIX
   Display *dpy;
 #endif
+
+  bool mIsLocked;
 
   Q_OBJECT
 
