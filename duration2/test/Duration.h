@@ -1,5 +1,4 @@
-#ifndef DURATION_H
-#define DURATION_H
+#pragma once
 
 
 #include <QDateTime>
@@ -10,9 +9,7 @@ class Duration
 public:
   Duration();
 
-  void SetMax(int _Year, int _Month, int _Day, int _Hour, int _Minutes, int _Seconds);
+  //void SetMax(int _Year, int _Month, int _Day, int _Hour, int _Minutes, int _Seconds);
 
   QString Get(const QDateTime& _Start, const QDateTime& _End);
 };
-
-#endif // DURATION_H
