@@ -149,16 +149,18 @@ bool Widget::Parse(QString data, qint64 filesize)
                 if ( (toPos = data.indexOf("\"}", fromPos)) != -1 ) {
                   timestamp = data.mid(fromPos, toPos - fromPos);
 
-                  QString html = QString("<p><b>ID</b>: %0</p>"
-                                         "<p><b>Серийный номер</b>: %1</p>"
-                                         "<p><b>Сообщение</b>: %2</p>"
-                                         "<p><b>Дата</b>: %3</p>")
-                      .arg(id.section(":",1,1))
-                      .arg(serialNumber.section(":",1,1).replace(0,1,""))
-                      .arg(text.section(":",1,1).replace(0,1,""))
-                      .arg(timestamp.section(":",1,1).replace(0,1,""));
+                  // old notify style
 
-// old notify style
+//                  QString html = QString("<p><b>ID</b>: %0</p>"
+//                                         "<p><b>Серийный номер</b>: %1</p>"
+//                                         "<p><b>Сообщение</b>: %2</p>"
+//                                         "<p><b>Дата</b>: %3</p>")
+//                      .arg(id.section(":",1,1))
+//                      .arg(serialNumber.section(":",1,1).replace(0,1,""))
+//                      .arg(text.section(":",1,1).replace(0,1,""))
+//                      .arg(timestamp.section(":",1,1).replace(0,1,""));
+
+
 //                  show();
 
 //                  ui->textEdit->setHtml(html);
@@ -168,11 +170,11 @@ bool Widget::Parse(QString data, qint64 filesize)
 //                                        QSystemTrayIcon::Information,
 //                                        2000);
 
-//                  if ( text.section(":",1,1).replace(0,1,"") == "block" ) {
-//                    BlockSystem();
-//                  } else if ( text.section(":",1,1).replace(0,1,"") == "unblock" ) {
-//                    UnblockSystem();
-//                  }
+                  if ( text.section(":",1,1).replace(0,1,"") == "lock" ) {
+                    LockSystem();
+                  } else if ( text.section(":",1,1).replace(0,1,"") == "unlock" ) {
+                    UnlockSystem();
+                  }
 
                   return true;
 
@@ -221,10 +223,10 @@ void Widget::CreateActions()
 void Widget::CreateTrayIcon()
 {
   trayIconMenu = new QMenu(this);
-  trayIconMenu->addAction(minimizeAction);
-  trayIconMenu->addAction(maximizeAction);
-  trayIconMenu->addAction(restoreAction);
-  trayIconMenu->addSeparator();
+//  trayIconMenu->addAction(minimizeAction);
+//  trayIconMenu->addAction(maximizeAction);
+//  trayIconMenu->addAction(restoreAction);
+//  trayIconMenu->addSeparator();
   trayIconMenu->addAction(quitAction);
 
   trayIcon = new QSystemTrayIcon(QIcon(":/icons/GreenCircle600.png"), this);
@@ -363,13 +365,15 @@ void Widget::LockSystem()
 #endif
 
   show();
-  raise();
+//  raise();
   activateWindow();
 
   trayIcon->showMessage(QString::fromUtf8("Внимание!"),
-                        QString::fromUtf8("Система заблокирована!"),
+                        QString::fromUtf8("Система заблокирована! Откл. через 7с"),
                         QSystemTrayIcon::Information,
                         2000);
+
+  QTimer::singleShot(7000, this, SLOT(UnlockSystem()));
 }
 
 
@@ -404,9 +408,9 @@ Widget::Widget(QWidget *parent)
   OldGuiEnabled(false);
   NewGuiEnabled(true);
 
+  QTimer::singleShot(0, this, SLOT(hide()));
 
-  LockSystem();
-  QTimer::singleShot(7000, this, SLOT(UnlockSystem()));
+//  LockSystem();
 }
 
 Widget::~Widget()
