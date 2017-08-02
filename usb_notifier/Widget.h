@@ -62,7 +62,8 @@ private:
   void OldGuiEnabled(bool enabled);
   void NewGuiEnabled(bool enabled);
 
-  void CenterWindow();
+  void GuiAsStripe();
+  void GuiMaximized();
 
   void ConsiderLock();
 

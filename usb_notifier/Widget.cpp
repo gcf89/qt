@@ -275,8 +275,13 @@ void Widget::NewGuiEnabled(bool enabled)
                 "color: black; }");
 }
 
-void Widget::CenterWindow()
+void Widget::GuiAsStripe()
 {
+  // set widget backgroup 'red' as info label
+  auto p = palette();
+  p.setColor(backgroundRole(), Qt::red);
+  setPalette(p);
+
   int dw = QApplication::desktop()->screenGeometry().width();
   int dh = QApplication::desktop()->screenGeometry().height();
 //  int scrCnt = QApplication::desktop()->screenCount();
@@ -295,7 +300,14 @@ void Widget::CenterWindow()
   int y = dh / 2 - height() / 2;
 //  move(-dw/2, dh / 2 - 150);
   move(0, y);
-//  qDebug() << dw << dh << scrCnt << x << y << width() << height();
+  //  qDebug() << dw << dh << scrCnt << x << y << width() << height();
+}
+
+void Widget::GuiMaximized()
+{
+  auto p = palette();
+  p.setColor(backgroundRole(), Qt::black);
+  setPalette(p);
 }
 
 void Widget::ConsiderLock()
@@ -521,7 +533,11 @@ Widget::Widget(QWidget *parent)
   OldGuiEnabled(false);
   NewGuiEnabled(true);
 #ifdef GUI_STRIPE
-  CenterWindow();
+  GuiAsStripe();
+#endif
+
+#ifdef GUI_MAXIMIZED
+  GuiMaximized();
 #endif
 
 
