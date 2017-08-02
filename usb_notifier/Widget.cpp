@@ -12,7 +12,12 @@
 
 #ifdef Q_OS_WIN32
 #include <windows.h>
+#endif
 
+#include "Widget.h"
+#include "ui_Widget.h"
+
+#ifdef Q_OS_WIN32
 UINT fuiPreviousState; // wtf?
 
 HHOOK hKeyHook = NULL;
@@ -45,45 +50,55 @@ BOOL UnlockSpecialKeys(PUINT fuiState)
 
 #endif
 
-#ifdef Q_OS_UNIX
 
-#endif
-
-
-#include "Widget.h"
-#include "ui_Widget.h"
-
-// for debugging
 //#define DBG
 
+#define GUI_MAXIMIZED
+//#define GUI_STRIPE
 
-bool Widget::Load(QString path)
+//#define ENABLE_LOCK
+//#define TESTING
+
+
+bool Widget::Load(QString cmdPath)
 {
-  QFile targetFile;
-  if (path.startsWith("./")) {
-    path.remove(0, 1);
-    path.prepend(qApp->applicationDirPath());
-  }
-  targetFile.setFileName(path);
-  if (!targetFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
-    targetFile.setFileName(qApp->applicationDirPath()+"/config");
-    if (!targetFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
-      qFatal("Cannot open config file. Exit!");
+  QFile f;
+  if (cmdPath.isEmpty()) {
+    QString confPath = qApp->applicationDirPath()+"/config";
+
+    f.setFileName(confPath);
+    if (!f.open(QIODevice::ReadOnly | QIODevice::Text)) {
+      qDebug() << "ERROR: cannot open config file:" << confPath;
+      return false;
     }
-    QString pathFromConfig = targetFile.readAll();
-    targetFile.close();
-    if (pathFromConfig.startsWith("./")) {
-      pathFromConfig.remove(0, 1);
-      pathFromConfig.prepend(qApp->applicationDirPath());
+    QString targetPath = f.readAll();
+    f.close();
+
+    if (targetPath.startsWith("./")) {
+      targetPath.remove(0, 1);
+      targetPath.prepend(qApp->applicationDirPath());
     }
-    targetFile.setFileName(pathFromConfig);
-    if (targetFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
-      RunWatcher(pathFromConfig);
+
+    f.setFileName(targetPath);
+    if (f.open(QIODevice::ReadOnly | QIODevice::Text)) {
+      RunWatcher(targetPath);
     } else {
+      qDebug() << "ERROR: cannot open file:" << targetPath;
       return false;
     }
   } else {
-    RunWatcher(path);
+    if (cmdPath.startsWith("./")) {
+      cmdPath.remove(0, 1);
+      cmdPath.prepend(qApp->applicationDirPath());
+    }
+
+    f.setFileName(cmdPath);
+    if (f.open(QIODevice::ReadOnly | QIODevice::Text)) {
+      RunWatcher(cmdPath);
+    } else {
+      qDebug() << "ERROR: cannot open file:" << cmdPath;
+      return false;
+    }
   }
 
   return true;
@@ -115,7 +130,7 @@ void Widget::RunWatcher(const QString& path)
   mSourcePath = path;
 
   QFile f(mSourcePath);
-  mFilePos = f.size();
+  mLastFileSize = f.size();
 
   mFileWatcher->addPath(mSourcePath);
   connect(mFileWatcher, SIGNAL(fileChanged(QString)), SLOT(onTargetFileChanged()));
@@ -262,14 +277,25 @@ void Widget::NewGuiEnabled(bool enabled)
 
 void Widget::CenterWindow()
 {
-  QDesktopWidget desktop;
-  QRect rect = desktop.availableGeometry(desktop.primaryScreen()); // прямоугольник с размерами экрана
-  QPoint center = rect.center(); //координаты центра экрана
-  int x = center.x() - (this->width()/2);  // учитываем половину ширины окна
-  int y = center.y() - (this->height()/2); // .. половину высоты
-  center.setX(x);
-  center.setY(y);
-  this->move(center);
+  int dw = QApplication::desktop()->screenGeometry().width();
+  int dh = QApplication::desktop()->screenGeometry().height();
+//  int scrCnt = QApplication::desktop()->screenCount();
+
+//  dw *= scrCnt;
+
+//  resize(width * scrCnt, 2 * height);
+  resize(dw, 300);
+
+//  QDesktopWidget desktop;
+//  QRect rect = desktop.availableGeometry(desktop.primaryScreen());
+//  QPoint center = rect.center();
+//  int x = center.x() - (this->width()/2);
+//  int y = center.y() - (this->height()/2);
+//  int x = dw / 2 - width() / 2;
+  int y = dh / 2 - height() / 2;
+//  move(-dw/2, dh / 2 - 150);
+  move(0, y);
+//  qDebug() << dw << dh << scrCnt << x << y << width() << height();
 }
 
 void Widget::ConsiderLock()
@@ -319,21 +345,43 @@ void Widget::onTargetFileChanged()
   in.setCodec(QTextCodec::codecForName("UTF8"));
 
 
-  if (mFilePos == f.size()) {
-    qDebug() << "File changed, but size still the same!";
-  } else if (mFilePos < f.size()) {
+  if (mLastFileSize == f.size()) {
+    qDebug() << "Current size:"
+             << f.size()
+             << "Last size:"
+             << mLastFileSize;
+  } else if (mLastFileSize < f.size()) {
 
-    if (in.seek(mFilePos)) {
-      if (Parse(in.read(f.size() - mFilePos), f.size())) {
-        mFilePos = f.size();
+    if (in.seek(mLastFileSize)) {
+      qDebug() << "Check for new data ("
+               << mLastFileSize
+               << ","
+               << f.size()
+               << ")";
+      if (Parse(in.read(f.size() - mLastFileSize), f.size())) {
+        mLastFileSize = f.size();
+
+        qDebug() << "Parse OK ("
+                 << mLastFileSize
+                 << ","
+                 << f.size()
+                 << ")";
+      } else {
+        qDebug() << "Parse FAILED ("
+                 << mLastFileSize
+                 << ","
+                 << f.size()
+                 << ")";
       }
     } else {
-      qDebug() << "bad seek";
+      qDebug() << "Error: 'seek' failed";
     }
   } else {
-    // rotation: some data could be lost
+    qDebug() << "File size is smaller than expected";
+
+    mLastFileSize = 0;
     if (Parse(in.readAll(), f.size())) {
-      mFilePos = f.size();
+      mLastFileSize = f.size();
     }
   }
 
@@ -349,50 +397,54 @@ void Widget::on_pushButton_clicked()
   hide();
 }
 
-void Widget::iconActivated(QSystemTrayIcon::ActivationReason reason)
-{
-  Q_UNUSED(reason)
+//void Widget::iconActivated(QSystemTrayIcon::ActivationReason reason)
+//{
+//  Q_UNUSED(reason)
 
-//  switch (reason) {
-//  case QSystemTrayIcon::Trigger:
-//  case QSystemTrayIcon::DoubleClick:
-//    iconComboBox->setCurrentIndex((iconComboBox->currentIndex() + 1) % iconComboBox->count());
-//    break;
-//  case QSystemTrayIcon::MiddleClick:
-//    showMessage();
-//    break;
-//  default:
-//    ;
-  //  }
-}
+////  switch (reason) {
+////  case QSystemTrayIcon::Trigger:
+////  case QSystemTrayIcon::DoubleClick:
+////    iconComboBox->setCurrentIndex((iconComboBox->currentIndex() + 1) % iconComboBox->count());
+////    break;
+////  case QSystemTrayIcon::MiddleClick:
+////    showMessage();
+////    break;
+////  default:
+////    ;
+//  //  }
+//}
 
 void Widget::UnlockSystem()
 {
-  mIsLocked = false;
+  if (mIsLocked) {
+    mIsLocked = false;
 
-//#ifdef Q_OS_WIN32
-//  UnlockSpecialKeys(&fuiPreviousState);
+#ifdef ENABLE_LOCK
+#ifdef Q_OS_WIN32
+    UnlockSpecialKeys(&fuiPreviousState);
 
-//  UnhookWindowsHookEx(hKeyHook);
-//  UnhookWindowsHookEx(hMouseHook);
-//#endif
+    UnhookWindowsHookEx(hKeyHook);
+    UnhookWindowsHookEx(hMouseHook);
+#endif
 
-//#ifdef Q_OS_UNIX
-//  XUngrabKeyboard(dpy, CurrentTime);
-//  XUngrabPointer(dpy, CurrentTime);
+#ifdef Q_OS_UNIX
+    XUngrabKeyboard(dpy, CurrentTime);
+    XUngrabPointer(dpy, CurrentTime);
 
-//  if (XCloseDisplay(dpy)) {
-//     qDebug() << Q_FUNC_INFO << "error XCloseDisplay";
-//  }
-//#endif
+    if (XCloseDisplay(dpy)) {
+      qDebug() << Q_FUNC_INFO << "error XCloseDisplay";
+    }
+#endif
+#endif
 
-  trayIcon->showMessage(QString::fromUtf8("Внимание!"),
-                        QString::fromUtf8("Система разблокирована!"),
-                        QSystemTrayIcon::Information,
-                        2000);
+    trayIcon->showMessage(QString::fromUtf8("Внимание!"),
+                          QString::fromUtf8("Система разблокирована!"),
+                          QSystemTrayIcon::Information,
+                          2000);
 
-//  hide();
-  QTimer::singleShot(1500, this, SLOT(hide()));
+    //  hide();
+    QTimer::singleShot(1500, this, SLOT(hide()));
+  }
 }
 
 void Widget::LockSystem()
@@ -400,33 +452,48 @@ void Widget::LockSystem()
   if (!mIsLocked) {
     mIsLocked = true;
 
-//#ifdef Q_OS_WIN32
-//    LockSpecialKeys(&fuiPreviousState);
+#ifdef ENABLE_LOCK
+#ifdef Q_OS_WIN32
+    LockSpecialKeys(&fuiPreviousState);
 
-//    hKeyHook = SetWindowsHookEx(WH_KEYBOARD_LL, (KeyProc), 0, 0);
-//    hMouseHook = SetWindowsHookEx(WH_MOUSE_LL, (MouseProc), NULL, 0);
-//#endif
+    hKeyHook = SetWindowsHookEx(WH_KEYBOARD_LL, (KeyProc), 0, 0);
+    hMouseHook = SetWindowsHookEx(WH_MOUSE_LL, (MouseProc), NULL, 0);
+#endif
 
-//#ifdef Q_OS_UNIX
-//    if (NULL==(dpy=XOpenDisplay(NULL))) {
-//      qDebug() << Q_FUNC_INFO << "error XOpenDisplay";
-//    }
+#ifdef Q_OS_UNIX
+    if (NULL==(dpy=XOpenDisplay(NULL))) {
+      qDebug() << Q_FUNC_INFO << "error XOpenDisplay";
+    }
 
-//    XGrabKeyboard(dpy, DefaultRootWindow(dpy), true, GrabModeAsync, GrabModeAsync, CurrentTime);
+    XGrabKeyboard(dpy, DefaultRootWindow(dpy), true, GrabModeAsync, GrabModeAsync, CurrentTime);
 
-//    XGrabPointer(dpy, DefaultRootWindow(dpy), 0, 0, 0, 0, DefaultRootWindow(dpy), None, CurrentTime);
-//#endif
+    XGrabPointer(dpy, DefaultRootWindow(dpy), 0, 0, 0, 0, DefaultRootWindow(dpy), None, CurrentTime);
+#endif
+#endif
 
+#ifdef GUI_MAXIMIZED
+    showMaximized();
+#endif
+
+#ifdef GUI_STRIPE
     show();
-//    showMaximized();
+#endif
+
+    // show on top of all windows
     activateWindow();
 
     trayIcon->showMessage(QString::fromUtf8("Внимание!"),
-                          QString::fromUtf8("Система заблокирована! Откл. через 7с"),
+                          QString::fromUtf8("Система заблокирована!"),
                           QSystemTrayIcon::Information,
                           2000);
 
-//    QTimer::singleShot(7000, this, SLOT(UnlockSystem()));
+#ifdef TESTING
+    trayIcon->showMessage(QString::fromUtf8("Внимание!"),
+                          QString::fromUtf8("Разблокировка через 7с"),
+                          QSystemTrayIcon::Information,
+                          2000);
+    QTimer::singleShot(7000, this, SLOT(UnlockSystem()));
+#endif
   }
 }
 
@@ -435,7 +502,7 @@ Widget::Widget(QWidget *parent)
   : QWidget(parent)
   , ui(new Ui::Widget)
   , mFileWatcher(new QFileSystemWatcher())
-  , mFilePos(0)
+  , mLastFileSize(0)
 #ifdef Q_OS_UNIX
   , dpy(NULL)
 #endif
@@ -443,46 +510,23 @@ Widget::Widget(QWidget *parent)
 {
   ui->setupUi(this);
 
-  // resize to normal window
-//  resize(QDesktopWidget().availableGeometry(this).size() * 0.3);
-
-  // resize to max (dirty hack)
-//  resize(32766, 2048);
-
-  // resize to stripe
-//  resize(32766, 300);
-
-  int width = QApplication::desktop()->screenGeometry().width();
-  int height = QApplication::desktop()->screenGeometry().height();
-  int scrCnt = QApplication::desktop()->screenCount();
-
-//  resize(width * scrCnt, 2 * height);
-  resize(width * scrCnt, 300);
-
-  qDebug() << width << scrCnt << height;
-
-  // flags
   setWindowFlags(Qt::WindowStaysOnTopHint);
-
-  CenterWindow();
 
   CreateActions();
   CreateTrayIcon();
-
-  connect(trayIcon, &QSystemTrayIcon::activated, this, &Widget::iconActivated);
-
+//  connect(trayIcon, &QSystemTrayIcon::activated, this, &Widget::iconActivated);
   trayIcon->show();
 
   // gui
   OldGuiEnabled(false);
   NewGuiEnabled(true);
+#ifdef GUI_STRIPE
+  CenterWindow();
+#endif
+
 
   // auto hide
   QTimer::singleShot(0, this, SLOT(hide()));
-
-#ifndef DBG
-  ui->label->setVisible(false);
-#endif
 }
 
 Widget::~Widget()

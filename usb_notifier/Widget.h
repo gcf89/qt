@@ -22,7 +22,7 @@ class Widget : public QWidget
 {
   Ui::Widget*           ui;
   QFileSystemWatcher*   mFileWatcher;
-  qint64                mFilePos;
+  qint64                mLastFileSize;
 
   QAction *minimizeAction;
   QAction *maximizeAction;
@@ -69,7 +69,7 @@ private:
 private slots:
   void onTargetFileChanged();
   void on_pushButton_clicked();
-  void iconActivated(QSystemTrayIcon::ActivationReason reason);
+//  void iconActivated(QSystemTrayIcon::ActivationReason reason);
   void UnlockSystem();
   void LockSystem();
 

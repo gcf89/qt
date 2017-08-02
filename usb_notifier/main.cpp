@@ -16,9 +16,8 @@ int main(int argc, char *argv[])
 
   Widget w;
   if (!w.Load(sourcePath)) {
-    qFatal("Cannot open target file!");
+    return -1;
   }
   w.show();
-
   return a.exec();
 }
