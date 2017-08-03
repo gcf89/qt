@@ -1,5 +1,3 @@
-#include <limits>
-
 #include <QApplication>
 #include <QFile>
 #include <QTextStream>
@@ -11,16 +9,14 @@
 #include <QDesktopWidget>
 #include <QColor>
 #include <QPixmap>
+#include <QIcon>
 
 #ifdef Q_OS_WIN32
 #include <windows.h>
 #endif
 
-#include "Widget.h"
-#include "ui_Widget.h"
-
-
-
+#include "Core.h"
+#include "Control.h"
 
 
 #ifdef Q_OS_WIN32
@@ -53,20 +49,13 @@ BOOL UnlockSpecialKeys(PUINT fuiState)
 {
   return SystemParametersInfo(SPI_SETSCREENSAVERRUNNING, FALSE, fuiState, 0);
 }
-
 #endif
 
-
-//#define DBG
-
-#define GUI_MAXIMIZED
-//#define GUI_STRIPE
-
-//#define ENABLE_LOCK
-//#define TESTING
+const int kHideTimeout = 1500;
+const int kTrayHideTimeout = 2000;
 
 
-bool Widget::Load(QString cmdPath)
+bool Core::Init(QString cmdPath)
 {
   QFile f;
   if (cmdPath.isEmpty()) {
@@ -110,28 +99,7 @@ bool Widget::Load(QString cmdPath)
   return true;
 }
 
-void Widget::setVisible(bool visible)
-{
-  minimizeAction->setEnabled(visible);
-  maximizeAction->setEnabled(!isMaximized());
-  restoreAction->setEnabled(isMaximized() || !visible);
-  QWidget::setVisible(visible);
-}
-
-void Widget::closeEvent(QCloseEvent *event)
-{
-  if (trayIcon->isVisible()) {
-//      QMessageBox::information(this, tr("Systray"),
-//                               tr("The program will keep running in the "
-//                                  "system tray. To terminate the program, "
-//                                  "choose <b>Quit</b> in the context menu "
-//                                  "of the system tray entry."));
-      hide();
-      event->ignore();
-  }
-}
-
-void Widget::RunWatcher(const QString& path)
+void Core::RunWatcher(const QString& path)
 {
   mSourcePath = path;
 
@@ -139,10 +107,11 @@ void Widget::RunWatcher(const QString& path)
   mLastFileSize = f.size();
 
   mFileWatcher->addPath(mSourcePath);
-  connect(mFileWatcher, SIGNAL(fileChanged(QString)), SLOT(onTargetFileChanged()));
+  connect(mFileWatcher, SIGNAL(fileChanged(QString)),
+          this, SLOT(onTargetFileChanged()));
 }
 
-bool Widget::Parse(QString data, qint64 filesize)
+bool Core::Parse(QString data, qint64 filesize)
 {
   Q_UNUSED(filesize)
 
@@ -238,93 +207,27 @@ bool Widget::Parse(QString data, qint64 filesize)
   return false;
 }
 
-void Widget::CreateActions()
+void Core::CreateActions()
 {
-  minimizeAction = new QAction(tr("Скрыть"), this);
-  connect(minimizeAction, &QAction::triggered, this, &QWidget::hide);
-
-  maximizeAction = new QAction(tr("Развернуть"), this);
-  connect(maximizeAction, &QAction::triggered, this, &QWidget::showMaximized);
-
-  restoreAction = new QAction(tr("Восстановить"), this);
-  connect(restoreAction, &QAction::triggered, this, &QWidget::showNormal);
-
   quitAction = new QAction(tr("Выход"), this);
   connect(quitAction, &QAction::triggered, qApp, &QCoreApplication::quit);
 }
 
-void Widget::CreateTrayIcon()
+void Core::CreateTrayIcon()
 {
-  trayIconMenu = new QMenu(this);
-//  trayIconMenu->addAction(minimizeAction);
-//  trayIconMenu->addAction(maximizeAction);
-//  trayIconMenu->addAction(restoreAction);
-//  trayIconMenu->addSeparator();
+  trayIcon = new QSystemTrayIcon(mSplash);
+  SetTrayIconAsLocked(false);
+
+#ifdef SHOW_TRAY_CONTEXT_MENU
+  trayIconMenu = new QMenu(mSplash);
   trayIconMenu->addAction(quitAction);
-
-  trayIcon = new QSystemTrayIcon(QIcon(":/icons/lock-xxl.png"), this);
   trayIcon->setContextMenu(trayIconMenu);
+#endif
+
+  trayIcon->show();
 }
 
-//void Widget::OldGuiEnabled(bool enabled)
-//{
-////  ui->label->setVisible(enabled);
-////  ui->pushButton->setVisible(enabled);
-////  ui->textEdit->setVisible(enabled);
-//}
-
-//void Widget::NewGuiEnabled(bool enabled)
-//{
-////  ui->labelWarn->setVisible(enabled);
-////  setWindowFlags(Qt::FramelessWindowHint);
-////  setStyleSheet("QLabel { background-color: red;"
-////                "color: black; }");
-//}
-
-void Widget::GuiAsStripe()
-{
-  // set widget backgroup 'red' as info label
-  auto p = palette();
-  p.setColor(backgroundRole(), Qt::red);
-  setPalette(p);
-
-  int dw = QApplication::desktop()->screenGeometry().width();
-  int dh = QApplication::desktop()->screenGeometry().height();
-//  int scrCnt = QApplication::desktop()->screenCount();
-
-//  dw *= scrCnt;
-
-//  resize(width * scrCnt, 2 * height);
-  resize(dw, 300);
-
-//  QDesktopWidget desktop;
-//  QRect rect = desktop.availableGeometry(desktop.primaryScreen());
-//  QPoint center = rect.center();
-//  int x = center.x() - (this->width()/2);
-//  int y = center.y() - (this->height()/2);
-//  int x = dw / 2 - width() / 2;
-  int y = dh / 2 - height() / 2;
-//  move(-dw/2, dh / 2 - 150);
-  move(0, y);
-  //  qDebug() << dw << dh << scrCnt << x << y << width() << height();
-}
-
-void Widget::GuiMaximized()
-{
-  setWindowFlags(Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint);
-
-  // main bg
-  QPalette p = palette();
-  p.setColor(backgroundRole(), Qt::black);
-  setPalette(p);
-
-  // pic bg
-  p = ui->labelPic->palette();
-  p.setColor(backgroundRole(), Qt::black);
-  ui->labelPic->setPalette(p);
-}
-
-void Widget::ConsiderLock()
+void Core::ConsiderLock()
 {
   bool needLock = !mGoodHardwareSNs.isEmpty() || !mBadHardwareSNs.isEmpty();
 
@@ -349,37 +252,13 @@ void Widget::ConsiderLock()
       msg.append("\n").append(*it);
     }
   }
-  ui->textEdit->setText(msg);
 
-  // top lable and bg
-  if (needLock) {
-    ui->labelTop->setText(tr("Комплект нарушен"));
+  mInfo->ShowInfo(msg, needLock);
 
-    QPalette p = ui->labelTop->palette();
-    p.setColor(backgroundRole(), Qt::black);
-    p.setColor(foregroundRole(), Qt::red);
-    ui->labelTop->setPalette(p);
-
-    ui->labelPic->setPixmap(mRedPic);
-  } else {
-    ui->labelTop->setText(tr("Комплект восстановлен"));
-
-    QPalette p = ui->labelTop->palette();
-    p.setColor(backgroundRole(), Qt::black);
-    p.setColor(foregroundRole(), mColorGreen);
-    ui->labelTop->setPalette(p);
-
-    ui->labelPic->setPixmap(mGreenPic);
-  }
-
-  if (needLock) {
-    LockSystem();
-  } else {
-    UnlockSystem();
-  }
+  needLock ? LockSystem() : UnlockSystem();
 }
 
-void Widget::onTargetFileChanged()
+void Core::onTargetFileChanged()
 {
   QFile f(mSourcePath);
   if (!f.open(QIODevice::ReadOnly | QIODevice::Text)) {
@@ -429,37 +308,9 @@ void Widget::onTargetFileChanged()
       mLastFileSize = f.size();
     }
   }
-
-#ifdef DBG
-  ui->label->setText(QString("File pos: %0, File size: %1")
-                     .arg(QString::number(mFilePos))
-                     .arg(QString::number(f.size())));
-#endif
 }
 
-//void Widget::on_pushButton_clicked()
-//{
-//  hide();
-//}
-
-//void Widget::iconActivated(QSystemTrayIcon::ActivationReason reason)
-//{
-//  Q_UNUSED(reason)
-
-////  switch (reason) {
-////  case QSystemTrayIcon::Trigger:
-////  case QSystemTrayIcon::DoubleClick:
-////    iconComboBox->setCurrentIndex((iconComboBox->currentIndex() + 1) % iconComboBox->count());
-////    break;
-////  case QSystemTrayIcon::MiddleClick:
-////    showMessage();
-////    break;
-////  default:
-////    ;
-//  //  }
-//}
-
-void Widget::UnlockSystem()
+void Core::UnlockSystem()
 {
   if (mIsLocked) {
     mIsLocked = false;
@@ -482,17 +333,21 @@ void Widget::UnlockSystem()
 #endif
 #endif
 
+#ifndef SILENT_TRAY
     trayIcon->showMessage(QString::fromUtf8("Внимание!"),
                           QString::fromUtf8("Система разблокирована!"),
                           QSystemTrayIcon::Information,
-                          2000);
+                          kTrayHideTimeout);
+#endif
 
-    //  hide();
-    QTimer::singleShot(1500, this, SLOT(hide()));
+    SetTrayIconAsLocked(false);
+
+    QTimer::singleShot(kHideTimeout, mSplash, SLOT(hide()));
+    QTimer::singleShot(kHideTimeout, mInfo, SLOT(hide()));
   }
 }
 
-void Widget::LockSystem()
+void Core::LockSystem()
 {
   if (!mIsLocked) {
     mIsLocked = true;
@@ -516,36 +371,42 @@ void Widget::LockSystem()
 #endif
 #endif
 
-#ifdef GUI_MAXIMIZED
-    showMaximized();
-#endif
+    mSplash->show();
+    mSplash->activateWindow();
 
-#ifdef GUI_STRIPE
-    show();
-#endif
+    mInfo->show();
+    mInfo->activateWindow();
 
-    // show on top of all windows
-    activateWindow();
+    SetTrayIconAsLocked(true);
 
+#ifndef SILENT_TRAY
     trayIcon->showMessage(QString::fromUtf8("Внимание!"),
                           QString::fromUtf8("Система заблокирована!"),
                           QSystemTrayIcon::Information,
-                          2000);
+                          kTrayHideTimeout);
+#endif
 
-#ifdef TESTING
+#ifdef AUTO_UNLOCK_ENABLE
     trayIcon->showMessage(QString::fromUtf8("Внимание!"),
                           QString::fromUtf8("Разблокировка через 7с"),
                           QSystemTrayIcon::Information,
-                          2000);
+                          kTrayHideTimeout);
     QTimer::singleShot(7000, this, SLOT(UnlockSystem()));
 #endif
   }
 }
 
+void Core::SetTrayIconAsLocked(bool locked)
+{
+  locked ? trayIcon->setIcon(mIconRed) : trayIcon->setIcon(mIconGreen);
+}
 
-Widget::Widget(QWidget *parent)
-  : QWidget(parent)
-  , ui(new Ui::Widget)
+
+
+Core::Core(QObject *parent)
+  : QObject(parent)
+  , mSplash(new WidgetSplash())
+  , mInfo(new DialogInfo(mSplash))
   , mFileWatcher(new QFileSystemWatcher())
   , mLastFileSize(0)
 #ifdef Q_OS_UNIX
@@ -553,35 +414,17 @@ Widget::Widget(QWidget *parent)
 #endif
   , mIsLocked(false)
 {
-  ui->setupUi(this);
+  mIconGreen = QIcon(":/icons/lock-xxl-green.png");
+  mIconRed = QIcon(":/icons/lock-xxl.png");
 
-  mGreenPic = QPixmap(":/icons/lock-xxl-green.png");
-  mRedPic = QPixmap(":/icons/lock-xxl.png");
-
-  mColorGreen = QColor(0, 218, 26); // green like lablePic
-
+#ifdef SHOW_TRAY_CONTEXT_MENU
   CreateActions();
+#endif
   CreateTrayIcon();
-//  connect(trayIcon, &QSystemTrayIcon::activated, this, &Widget::iconActivated);
-  trayIcon->show();
-
-  // gui
-//  OldGuiEnabled(false);
-//  NewGuiEnabled(true);
-#ifdef GUI_STRIPE
-  GuiAsStripe();
-#endif
-
-#ifdef GUI_MAXIMIZED
-  GuiMaximized();
-#endif
-
-
-  // auto hide
-  QTimer::singleShot(0, this, SLOT(hide()));
 }
 
-Widget::~Widget()
+Core::~Core()
 {
-  delete ui;
+  mSplash->deleteLater();
+  mFileWatcher->deleteLater();
 }

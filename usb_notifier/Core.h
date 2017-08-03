@@ -1,5 +1,6 @@
-#ifndef WIDGET_H
-#define WIDGET_H
+#pragma once
+
+#include <QObject>
 
 #include <QWidget>
 #include <QString>
@@ -14,19 +15,20 @@
 #include <X11/Xlib.h>
 #endif
 
-namespace Ui {
-class Widget;
-}
+#include "WidgetSplash.h"
+#include "DialogInfo.h"
 
-class Widget : public QWidget
+
+class Core : public QObject
 {
-  Ui::Widget*           ui;
+  Q_OBJECT
+
+  WidgetSplash* mSplash;
+  DialogInfo* mInfo;
+
   QFileSystemWatcher*   mFileWatcher;
   qint64                mLastFileSize;
 
-  QAction *minimizeAction;
-  QAction *maximizeAction;
-  QAction *restoreAction;
   QAction *quitAction;
 
   QSystemTrayIcon *trayIcon;
@@ -37,51 +39,32 @@ class Widget : public QWidget
   QStringList mGoodHardwareSNs;
   QStringList mBadHardwareSNs;
 
-  QPixmap mGreenPic;
-  QPixmap mRedPic;
-
-  QColor mColorGreen;
-
 #ifdef Q_OS_UNIX
   Display *dpy;
 #endif
 
   bool mIsLocked;
 
-  Q_OBJECT
+  QIcon mIconGreen;
+  QIcon mIconRed;
 
 public:
-  bool Load(QString path);
-
-  void setVisible(bool visible) override;
-
-protected:
-    void closeEvent(QCloseEvent *event) override;
+  bool Init(QString path);
 
 private:
   void RunWatcher(const QString& path);
   bool Parse(QString data, qint64 filesize);
   void CreateActions();
   void CreateTrayIcon();
-
-//  void OldGuiEnabled(bool enabled);
-//  void NewGuiEnabled(bool enabled);
-
-  void GuiAsStripe();
-  void GuiMaximized();
-
   void ConsiderLock();
+  void UnlockSystem();
+  void LockSystem();
+  void SetTrayIconAsLocked(bool locked);
 
 private slots:
   void onTargetFileChanged();
-//  void on_pushButton_clicked();
-//  void iconActivated(QSystemTrayIcon::ActivationReason reason);
-  void UnlockSystem();
-  void LockSystem();
 
 public:
-  explicit Widget(QWidget *parent = 0);
-  ~Widget();
+  explicit Core(QObject *parent = 0);
+  ~Core();
 };
-
-#endif // WIDGET_H

@@ -1,7 +1,6 @@
 #include <QApplication>
-#include <QDebug>
 
-#include "Widget.h"
+#include "Core.h"
 
 int main(int argc, char *argv[])
 {
@@ -14,10 +13,10 @@ int main(int argc, char *argv[])
     sourcePath = QString(argv[1]);
   }
 
-  Widget w;
-  if (!w.Load(sourcePath)) {
+  Core core;
+  if (!core.Init(sourcePath)) {
     return -1;
   }
-  w.show();
+
   return a.exec();
 }

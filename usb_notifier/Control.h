@@ -1,0 +1,12 @@
+#pragma once
+
+// FOR RELEASE
+//#define ENABLE_LOCK
+//#define SPLASH_STAYS_ON_TOP
+
+// FOR DEBUG
+#define SHOW_TRAY_CONTEXT_MENU
+//#define AUTO_UNLOCK_ENABLE
+
+// FEATURES
+#define SILENT_TRAY

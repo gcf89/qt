@@ -25,11 +25,19 @@ DEFINES += QT_DEPRECATED_WARNINGS
 QMAKE_CXXFLAGS += -std=c++11
 
 SOURCES += main.cpp\
-        Widget.cpp
+    DialogInfo.cpp \
+    WidgetSplash.cpp \
+    Core.cpp
 
-HEADERS  += Widget.h
+HEADERS  += \
+    DialogInfo.h \
+    WidgetSplash.h \
+    Core.h \
+    Control.h
 
-FORMS    += Widget.ui
+FORMS    += \
+    DialogInfo.ui \
+    WidgetSplash.ui
 
 RESOURCES += \
     resources.qrc
