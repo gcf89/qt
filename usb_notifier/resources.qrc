@@ -1,5 +1,7 @@
 <RCC>
     <qresource prefix="/icons">
         <file>GreenCircle600.png</file>
+        <file>lock-xxl.png</file>
+        <file>lock-xxl-green.png</file>
     </qresource>
 </RCC>

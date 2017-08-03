@@ -9,6 +9,8 @@
 #include <QThread>
 #include <QStyleOption>
 #include <QDesktopWidget>
+#include <QColor>
+#include <QPixmap>
 
 #ifdef Q_OS_WIN32
 #include <windows.h>
@@ -16,6 +18,10 @@
 
 #include "Widget.h"
 #include "ui_Widget.h"
+
+
+
+
 
 #ifdef Q_OS_WIN32
 UINT fuiPreviousState; // wtf?
@@ -256,24 +262,24 @@ void Widget::CreateTrayIcon()
 //  trayIconMenu->addSeparator();
   trayIconMenu->addAction(quitAction);
 
-  trayIcon = new QSystemTrayIcon(QIcon(":/icons/GreenCircle600.png"), this);
+  trayIcon = new QSystemTrayIcon(QIcon(":/icons/lock-xxl.png"), this);
   trayIcon->setContextMenu(trayIconMenu);
 }
 
-void Widget::OldGuiEnabled(bool enabled)
-{
-  ui->label->setVisible(enabled);
-  ui->pushButton->setVisible(enabled);
-  ui->textEdit->setVisible(enabled);
-}
+//void Widget::OldGuiEnabled(bool enabled)
+//{
+////  ui->label->setVisible(enabled);
+////  ui->pushButton->setVisible(enabled);
+////  ui->textEdit->setVisible(enabled);
+//}
 
-void Widget::NewGuiEnabled(bool enabled)
-{
-  ui->labelWarn->setVisible(enabled);
-  setWindowFlags(Qt::FramelessWindowHint);
-  setStyleSheet("QLabel { background-color: red;"
-                "color: black; }");
-}
+//void Widget::NewGuiEnabled(bool enabled)
+//{
+////  ui->labelWarn->setVisible(enabled);
+////  setWindowFlags(Qt::FramelessWindowHint);
+////  setStyleSheet("QLabel { background-color: red;"
+////                "color: black; }");
+//}
 
 void Widget::GuiAsStripe()
 {
@@ -305,39 +311,66 @@ void Widget::GuiAsStripe()
 
 void Widget::GuiMaximized()
 {
-  auto p = palette();
+  setWindowFlags(Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint);
+
+  // main bg
+  QPalette p = palette();
   p.setColor(backgroundRole(), Qt::black);
   setPalette(p);
+
+  // pic bg
+  p = ui->labelPic->palette();
+  p.setColor(backgroundRole(), Qt::black);
+  ui->labelPic->setPalette(p);
 }
 
 void Widget::ConsiderLock()
 {
-  QString msg;
-  bool needLock = false;
+  bool needLock = !mGoodHardwareSNs.isEmpty() || !mBadHardwareSNs.isEmpty();
 
-  if (!mGoodHardwareSNs.isEmpty() || !mBadHardwareSNs.isEmpty()) {
-    msg = tr("Комплект нарушен.");
+  QString msg;
+  if (needLock) {
     if (!mGoodHardwareSNs.isEmpty()) {
-      msg.append(tr("\n\nСписок извлеченного основного оборудования:"));
+      msg.append(tr("Список извлеченного основного оборудования:"));
     }
     for (auto it=mGoodHardwareSNs.constBegin(); it!=mGoodHardwareSNs.constEnd(); ++it) {
       msg.append("\n").append(*it);
     }
 
+    // separator
+    if (!mGoodHardwareSNs.isEmpty()) {
+      msg.append("\n\n");
+    }
+
     if (!mBadHardwareSNs.isEmpty()) {
-      msg.append(tr("\n\nСписок вставленных запрещенных устройств:"));
+      msg.append(tr("Список вставленных запрещенных устройств:"));
     }
     for (auto it=mBadHardwareSNs.constBegin(); it!=mBadHardwareSNs.constEnd(); ++it) {
       msg.append("\n").append(*it);
     }
-
-    needLock = true;
-
-  } else {
-    msg = QString::fromUtf8("Комплект восстановлен.");
   }
+  ui->textEdit->setText(msg);
 
-  ui->labelWarn->setText(msg);
+  // top lable and bg
+  if (needLock) {
+    ui->labelTop->setText(tr("Комплект нарушен"));
+
+    QPalette p = ui->labelTop->palette();
+    p.setColor(backgroundRole(), Qt::black);
+    p.setColor(foregroundRole(), Qt::red);
+    ui->labelTop->setPalette(p);
+
+    ui->labelPic->setPixmap(mRedPic);
+  } else {
+    ui->labelTop->setText(tr("Комплект восстановлен"));
+
+    QPalette p = ui->labelTop->palette();
+    p.setColor(backgroundRole(), Qt::black);
+    p.setColor(foregroundRole(), mColorGreen);
+    ui->labelTop->setPalette(p);
+
+    ui->labelPic->setPixmap(mGreenPic);
+  }
 
   if (needLock) {
     LockSystem();
@@ -404,10 +437,10 @@ void Widget::onTargetFileChanged()
 #endif
 }
 
-void Widget::on_pushButton_clicked()
-{
-  hide();
-}
+//void Widget::on_pushButton_clicked()
+//{
+//  hide();
+//}
 
 //void Widget::iconActivated(QSystemTrayIcon::ActivationReason reason)
 //{
@@ -522,7 +555,10 @@ Widget::Widget(QWidget *parent)
 {
   ui->setupUi(this);
 
-  setWindowFlags(Qt::WindowStaysOnTopHint);
+  mGreenPic = QPixmap(":/icons/lock-xxl-green.png");
+  mRedPic = QPixmap(":/icons/lock-xxl.png");
+
+  mColorGreen = QColor(0, 218, 26); // green like lablePic
 
   CreateActions();
   CreateTrayIcon();
@@ -530,8 +566,8 @@ Widget::Widget(QWidget *parent)
   trayIcon->show();
 
   // gui
-  OldGuiEnabled(false);
-  NewGuiEnabled(true);
+//  OldGuiEnabled(false);
+//  NewGuiEnabled(true);
 #ifdef GUI_STRIPE
   GuiAsStripe();
 #endif

@@ -37,6 +37,11 @@ class Widget : public QWidget
   QStringList mGoodHardwareSNs;
   QStringList mBadHardwareSNs;
 
+  QPixmap mGreenPic;
+  QPixmap mRedPic;
+
+  QColor mColorGreen;
+
 #ifdef Q_OS_UNIX
   Display *dpy;
 #endif
@@ -59,8 +64,8 @@ private:
   void CreateActions();
   void CreateTrayIcon();
 
-  void OldGuiEnabled(bool enabled);
-  void NewGuiEnabled(bool enabled);
+//  void OldGuiEnabled(bool enabled);
+//  void NewGuiEnabled(bool enabled);
 
   void GuiAsStripe();
   void GuiMaximized();
@@ -69,7 +74,7 @@ private:
 
 private slots:
   void onTargetFileChanged();
-  void on_pushButton_clicked();
+//  void on_pushButton_clicked();
 //  void iconActivated(QSystemTrayIcon::ActivationReason reason);
   void UnlockSystem();
   void LockSystem();
