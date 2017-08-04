@@ -32,7 +32,10 @@ void WidgetSplash::PrepareGui()
   resize(totalW, totalH);
   move(startX, startY);
 
-  qDebug() << totalW << totalH << startX << startY;
+  WriteDebug(QString::number(totalW) + " "
+      + QString::number(totalH) + " "
+      + QString::number(startX) + " "
+      + QString::number(startY));
 }
 
 

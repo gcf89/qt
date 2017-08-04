@@ -23,30 +23,22 @@ class Core : public QObject
 {
   Q_OBJECT
 
-  WidgetSplash* mSplash;
-  DialogInfo* mInfo;
-
+  WidgetSplash*         mSplash;
+  DialogInfo*           mInfo;
   QFileSystemWatcher*   mFileWatcher;
   qint64                mLastFileSize;
-
-  QAction *quitAction;
-
-  QSystemTrayIcon *trayIcon;
-  QMenu *trayIconMenu;
-
+  QAction*              quitAction;
+  QSystemTrayIcon*      trayIcon;
+  QMenu*                trayIconMenu;
   QString               mSourcePath;
-
-  QStringList mGoodHardwareSNs;
-  QStringList mBadHardwareSNs;
-
+  QStringList           mGoodHardwareSNs;
+  QStringList           mBadHardwareSNs;
 #ifdef Q_OS_UNIX
-  Display *dpy;
+  Display*              dpy;
 #endif
-
-  bool mIsLocked;
-
-  QIcon mIconGreen;
-  QIcon mIconRed;
+  bool                  mIsLocked;
+  QIcon                 mIconGreen;
+  QIcon                 mIconRed;
 
 public:
   bool Init(QString path);
@@ -54,12 +46,13 @@ public:
 private:
   void RunWatcher(const QString& path);
   bool Parse(QString data, qint64 filesize);
-  void CreateActions();
   void CreateTrayIcon();
   void ConsiderLock();
   void UnlockSystem();
   void LockSystem();
+  void SetCADActionsEnabled(bool enabled);
   void SetTrayIconAsLocked(bool locked);
+  void SetTrayMessage(QString message);
 
 private slots:
   void onTargetFileChanged();

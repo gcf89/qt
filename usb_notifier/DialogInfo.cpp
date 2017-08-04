@@ -4,6 +4,7 @@
 
 #include "DialogInfo.h"
 #include "ui_DialogInfo.h"
+#include "Control.h"
 
 
 void DialogInfo::ShowInfo(QString message, bool needLock)
@@ -50,7 +51,7 @@ void DialogInfo::PrepareGui()
   int y = (dh - height()) / 2;
   move(x, y);
 
-  qDebug() << "Info coord:" << x << y;
+  WriteDebug("Info coord: " + QString::number(x) + " " + QString::number(y));
 }
 
 

@@ -10,6 +10,7 @@
 #include <QColor>
 #include <QPixmap>
 #include <QIcon>
+#include <QSettings>
 
 #ifdef Q_OS_WIN32
 #include <windows.h>
@@ -63,7 +64,7 @@ bool Core::Init(QString cmdPath)
 
     f.setFileName(confPath);
     if (!f.open(QIODevice::ReadOnly | QIODevice::Text)) {
-      qDebug() << "ERROR: cannot open config file:" << confPath;
+      SetTrayMessage("ERROR: cannot open config file: " + confPath);
       return false;
     }
     QString targetPath = f.readAll();
@@ -78,7 +79,7 @@ bool Core::Init(QString cmdPath)
     if (f.open(QIODevice::ReadOnly | QIODevice::Text)) {
       RunWatcher(targetPath);
     } else {
-      qDebug() << "ERROR: cannot open file:" << targetPath;
+      SetTrayMessage("ERROR: cannot open file: " + targetPath);
       return false;
     }
   } else {
@@ -91,7 +92,7 @@ bool Core::Init(QString cmdPath)
     if (f.open(QIODevice::ReadOnly | QIODevice::Text)) {
       RunWatcher(cmdPath);
     } else {
-      qDebug() << "ERROR: cannot open file:" << cmdPath;
+      SetTrayMessage("ERROR: cannot open file:" + cmdPath);
       return false;
     }
   }
@@ -181,36 +182,30 @@ bool Core::Parse(QString data, qint64 filesize)
                   return true;
 
                 } else {
-                  qDebug() << "Failed to find TIMESTAMP end!";
+                  SetTrayMessage("Failed to find TIMESTAMP end!");
                 }
               } else {
-                qDebug() << "Failed to find TIMESTAMP start!";
+                SetTrayMessage("Failed to find TIMESTAMP start!");
               }
             } else {
-              qDebug() << "Failed to find TEXT end!";
+              SetTrayMessage("Failed to find TEXT end!");
             }
           } else {
-            qDebug() << "Failed to find TEXT start!";
+            SetTrayMessage("Failed to find TEXT start!");
           }
         } else {
-          qDebug() << "Failed to find SERIAL end!";
+          SetTrayMessage("Failed to find SERIAL end!");
         }
       } else {
-        qDebug() << "Failed to find SERIAL start!";
+        SetTrayMessage("Failed to find SERIAL start!");
       }
     } else {
-      qDebug() << "Failed to find ID end!";
+      SetTrayMessage("Failed to find ID end!");
     }
   } else {
-    qDebug() << "Failed to find ID start!";
+    SetTrayMessage("Failed to find ID start!");
   }
   return false;
-}
-
-void Core::CreateActions()
-{
-  quitAction = new QAction(tr("Выход"), this);
-  connect(quitAction, &QAction::triggered, qApp, &QCoreApplication::quit);
 }
 
 void Core::CreateTrayIcon()
@@ -219,8 +214,12 @@ void Core::CreateTrayIcon()
   SetTrayIconAsLocked(false);
 
 #ifdef SHOW_TRAY_CONTEXT_MENU
+  quitAction = new QAction(tr("Выход"), this);
+  connect(quitAction, &QAction::triggered, qApp, &QCoreApplication::quit);
+
   trayIconMenu = new QMenu(mSplash);
   trayIconMenu->addAction(quitAction);
+
   trayIcon->setContextMenu(trayIconMenu);
 #endif
 
@@ -270,38 +269,35 @@ void Core::onTargetFileChanged()
 
 
   if (mLastFileSize == f.size()) {
-    qDebug() << "Current size:"
-             << f.size()
-             << "Last size:"
-             << mLastFileSize;
+    SetTrayMessage("Current size: "
+                   + QString::number(f.size())
+                   + "Last size: "
+                   + QString::number(mLastFileSize));
   } else if (mLastFileSize < f.size()) {
 
     if (in.seek(mLastFileSize)) {
-      qDebug() << "Check for new data ("
-               << mLastFileSize
-               << ","
-               << f.size()
-               << ")";
+      SetTrayMessage("Check for new data: "
+                     + QString::number(mLastFileSize)
+                     + ", "
+                     + QString::number(f.size()));
       if (Parse(in.read(f.size() - mLastFileSize), f.size())) {
         mLastFileSize = f.size();
 
-        qDebug() << "Parse OK ("
-                 << mLastFileSize
-                 << ","
-                 << f.size()
-                 << ")";
+        SetTrayMessage("Parse OK: "
+                       + QString::number(mLastFileSize)
+                       + ", "
+                       + QString::number(f.size()));
       } else {
-        qDebug() << "Parse FAILED ("
-                 << mLastFileSize
-                 << ","
-                 << f.size()
-                 << ")";
+        SetTrayMessage("Parse FAILED: "
+                       + QString::number(mLastFileSize)
+                       + ", "
+                       + QString::number(f.size()));
       }
     } else {
-      qDebug() << "Error: 'seek' failed";
+      SetTrayMessage("Error: 'seek' failed");
     }
   } else {
-    qDebug() << "File size is smaller than expected";
+    SetTrayMessage("File size is smaller than expected");
 
     mLastFileSize = 0;
     if (Parse(in.readAll(), f.size())) {
@@ -314,6 +310,12 @@ void Core::UnlockSystem()
 {
   if (mIsLocked) {
     mIsLocked = false;
+
+#ifdef Q_OS_WIN32
+#ifdef DISABLE_CAD
+    SetCADActionsEnabled(true);
+#endif
+#endif
 
 #ifdef ENABLE_LOCK
 #ifdef Q_OS_WIN32
@@ -328,7 +330,7 @@ void Core::UnlockSystem()
     XUngrabPointer(dpy, CurrentTime);
 
     if (XCloseDisplay(dpy)) {
-      qDebug() << Q_FUNC_INFO << "error XCloseDisplay";
+      SetTrayMessage("error XCloseDisplay");
     }
 #endif
 #endif
@@ -352,6 +354,12 @@ void Core::LockSystem()
   if (!mIsLocked) {
     mIsLocked = true;
 
+#ifdef Q_OS_WIN32
+#ifdef DISABLE_CAD
+    SetCADActionsEnabled(false);
+#endif
+#endif
+
 #ifdef ENABLE_LOCK
 #ifdef Q_OS_WIN32
     LockSpecialKeys(&fuiPreviousState);
@@ -362,7 +370,7 @@ void Core::LockSystem()
 
 #ifdef Q_OS_UNIX
     if (NULL==(dpy=XOpenDisplay(NULL))) {
-      qDebug() << Q_FUNC_INFO << "error XOpenDisplay";
+      SetTrayMessage("error XOpenDisplay");
     }
 
     XGrabKeyboard(dpy, DefaultRootWindow(dpy), true, GrabModeAsync, GrabModeAsync, CurrentTime);
@@ -396,9 +404,39 @@ void Core::LockSystem()
   }
 }
 
+void Core::SetCADActionsEnabled(bool enabled)
+{
+  int v = enabled ? 0 : 1;
+  QSettings userSystem("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\System",
+                         QSettings::NativeFormat);
+  userSystem.setValue("DisableChangePassword", v);
+  userSystem.setValue("DisableLockWorkstation", v);
+  userSystem.setValue("DisableTaskMgr", v);
+
+  QSettings userExplorer("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer",
+                         QSettings::NativeFormat);
+  userExplorer.setValue("NoLogoff", v);
+  userExplorer.setValue("NoClose", v);
+
+  QSettings machineSystem("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System",
+                         QSettings::NativeFormat);
+  machineSystem.setValue("HideFastUserSwitching", v);
+}
+
 void Core::SetTrayIconAsLocked(bool locked)
 {
   locked ? trayIcon->setIcon(mIconRed) : trayIcon->setIcon(mIconGreen);
+}
+
+void Core::SetTrayMessage(QString message)
+{
+#ifdef SHOW_TRAY_DEBUG
+  trayIcon->setToolTip(message);
+#endif
+
+#ifdef SHOW_DEBUG
+  qDebug() << message;
+#endif
 }
 
 
@@ -416,10 +454,6 @@ Core::Core(QObject *parent)
 {
   mIconGreen = QIcon(":/icons/lock-xxl-green.png");
   mIconRed = QIcon(":/icons/lock-xxl.png");
-
-#ifdef SHOW_TRAY_CONTEXT_MENU
-  CreateActions();
-#endif
   CreateTrayIcon();
 }
 
