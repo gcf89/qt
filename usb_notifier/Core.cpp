@@ -409,7 +409,7 @@ void Core::LockSystem()
                           kTrayHideTimeout);
     mGoodHardwareSNs.clear();
     mBadHardwareSNs.clear();
-    QTimer::singleShot(3000, this, SLOT(UnlockSystem()));
+    QTimer::singleShot(7000, this, SLOT(UnlockSystem()));
 #endif
   }
 }
