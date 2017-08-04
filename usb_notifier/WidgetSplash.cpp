@@ -21,18 +21,28 @@ void WidgetSplash::PrepareGui()
   int dw = QApplication::desktop()->screenGeometry().width();
   int dh = QApplication::desktop()->screenGeometry().height();
 
-  int scrCnt = QApplication::desktop()->screenCount();
-  int auxD = (scrCnt - 1) * 2;
-  int totalW = dw * auxD + dw;
-  int startX = -(totalW/2);
+  int auxD = 0;
+  int totalW = 0;
+  int totalH = 0;
+  int startX = 0;
+  int startY = 0;
 
-  int totalH = dh * auxD + dh;
-  int startY = -(totalH/2);
+  int scrCnt = QApplication::desktop()->screenCount();
+  if (scrCnt < 2) {
+    totalW = dw;
+    totalH = dh;
+  } else {
+    auxD = (scrCnt - 1) * 2;
+    totalW = dw * auxD + dw;
+    startX = -(totalW/2);
+    totalH = dh * auxD + dh;
+    startY = -(totalH/2);
+  }
 
   resize(totalW, totalH);
   move(startX, startY);
 
-  WriteDebug(QString::number(totalW) + " "
+  WriteDebug("Splash: "+ QString::number(totalW) + " "
       + QString::number(totalH) + " "
       + QString::number(startX) + " "
       + QString::number(startY));

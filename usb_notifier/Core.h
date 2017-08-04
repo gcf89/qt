@@ -48,7 +48,9 @@ private:
   bool Parse(QString data, qint64 filesize);
   void CreateTrayIcon();
   void ConsiderLock();
+private slots:
   void UnlockSystem();
+private:
   void LockSystem();
   void SetCADActionsEnabled(bool enabled);
   void SetTrayIconAsLocked(bool locked);

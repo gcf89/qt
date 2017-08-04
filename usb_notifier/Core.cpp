@@ -273,6 +273,7 @@ void Core::onTargetFileChanged()
                    + QString::number(f.size())
                    + "Last size: "
                    + QString::number(mLastFileSize));
+
   } else if (mLastFileSize < f.size()) {
 
     if (in.seek(mLastFileSize)) {
@@ -280,6 +281,7 @@ void Core::onTargetFileChanged()
                      + QString::number(mLastFileSize)
                      + ", "
                      + QString::number(f.size()));
+
       if (Parse(in.read(f.size() - mLastFileSize), f.size())) {
         mLastFileSize = f.size();
 
@@ -297,12 +299,18 @@ void Core::onTargetFileChanged()
       SetTrayMessage("Error: 'seek' failed");
     }
   } else {
-    SetTrayMessage("File size is smaller than expected");
+    SetTrayMessage("File size is smaller than expected: "
+                   + QString::number(mLastFileSize)
+                   + ", "
+                   + QString::number(f.size()));
 
-    mLastFileSize = 0;
-    if (Parse(in.readAll(), f.size())) {
-      mLastFileSize = f.size();
+    if (f.size() != 0) {
+      mLastFileSize = 0;
+      if (Parse(in.readAll(), f.size())) {
+        mLastFileSize = f.size();
+      }
     }
+
   }
 }
 
@@ -399,7 +407,9 @@ void Core::LockSystem()
                           QString::fromUtf8("Разблокировка через 7с"),
                           QSystemTrayIcon::Information,
                           kTrayHideTimeout);
-    QTimer::singleShot(7000, this, SLOT(UnlockSystem()));
+    mGoodHardwareSNs.clear();
+    mBadHardwareSNs.clear();
+    QTimer::singleShot(3000, this, SLOT(UnlockSystem()));
 #endif
   }
 }
