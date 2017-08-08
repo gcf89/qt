@@ -45,6 +45,8 @@ RESOURCES += \
 
 unix: LIBS += -lX11
 
+QMAKE_CXXFLAGS += -std=c++11
+
 #win32:CONFIG(release, debug|release): LIBS += -LC:/Users/spakhomov/Downloads/lock_mouse_and_kbd/ -lLockScr
 #else:win32:CONFIG(debug, debug|release): LIBS += -LC:/Users/spakhomov/Downloads/lock_mouse_and_kbd/ -lLockScrd
 #else:unix: LIBS += -LC:/Users/spakhomov/Downloads/lock_mouse_and_kbd/ -lLockScr

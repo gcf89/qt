@@ -22,7 +22,7 @@
 class Core : public QObject
 {
   Q_OBJECT
-
+public:
   WidgetSplash*         mSplash;
   DialogInfo*           mInfo;
   QFileSystemWatcher*   mFileWatcher;
@@ -31,8 +31,9 @@ class Core : public QObject
   QSystemTrayIcon*      trayIcon;
   QMenu*                trayIconMenu;
   QString               mSourcePath;
-  QStringList           mGoodHardwareSNs;
-  QStringList           mBadHardwareSNs;
+  QStringList           mHWGood;
+  QStringList           mHWInstalledRemoved;
+  QStringList           mHWBad;
 #ifdef Q_OS_UNIX
   Display*              dpy;
 #endif
@@ -43,14 +44,14 @@ class Core : public QObject
 public:
   bool Init(QString path);
 
-private:
+public:
   void RunWatcher(const QString& path);
   bool Parse(QString data, qint64 filesize);
   void CreateTrayIcon();
   void ConsiderLock();
 private slots:
   void UnlockSystem();
-private:
+public:
   void LockSystem();
   void SetCADActionsEnabled(bool enabled);
   void SetTrayIconAsLocked(bool locked);
