@@ -39,9 +39,9 @@ void WidgetSplash::PrepareGui()
     } else {
       int auxD = (scrCnt - 1) * 2;
       totalW = dw * auxD + dw;
-      posX = -(totalW/2) - dw/2;
       totalH = dh * auxD + dh;
-      posY = -(totalH/2) - dh/2;
+      posX = -((scrCnt - 1) * dw);
+      posY = -((scrCnt - 1) * dh);
     }
     resize(totalW, totalH);
     move(posX, posY);
