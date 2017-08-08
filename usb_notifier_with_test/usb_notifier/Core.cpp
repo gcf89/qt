@@ -180,9 +180,6 @@ bool Core::Parse(QString data, qint64 filesize)
 
                     bool handled = true;
                     if ( msg == QString::fromUtf8("USB устройство разрешено") ) {
-//                      if (!mHWInstalledRemoved.removeOne(sn)) {
-//                        mHWGood.removeOne(sn);
-//                      }
 
                       if (mHWInstalledRemoved.removeOne(sn)) {
                         WriteDebug("we got back needed hw! yay!");
@@ -196,9 +193,6 @@ bool Core::Parse(QString data, qint64 filesize)
                       WriteDebug("inserted smth bad");
 
                     } else if ( msg == QString::fromUtf8("USB устройство извлечено") ) {
-//                      if (!mHWBad.removeOne(sn)) {
-//                        mHWGood << sn;
-//                      }
 
                       if (mHWBad.removeOne(sn)) {
 
@@ -272,7 +266,7 @@ bool Core::Parse(QString data, qint64 filesize)
   }
 
   // comment if testing
-//  ConsiderLock();
+  ConsiderLock();
   return true;
 
 
@@ -477,19 +471,19 @@ void Core::CreateTrayIcon()
 
 void Core::ConsiderLock()
 {
-  bool needLock = !mHWGood.isEmpty() || !mHWBad.isEmpty();
+  bool needLock = !mHWInstalledRemoved.isEmpty() || !mHWBad.isEmpty();
 
   QString msg;
   if (needLock) {
-    if (!mHWGood.isEmpty()) {
+    if (!mHWInstalledRemoved.isEmpty()) {
       msg.append(tr("Список извлеченного основного оборудования:"));
     }
-    for (auto it=mHWGood.constBegin(); it!=mHWGood.constEnd(); ++it) {
+    for (auto it=mHWInstalledRemoved.constBegin(); it!=mHWInstalledRemoved.constEnd(); ++it) {
       msg.append("\n").append(*it);
     }
 
     // separator
-    if (!mHWGood.isEmpty()) {
+    if (!mHWInstalledRemoved.isEmpty()) {
       msg.append("\n\n");
     }
 
