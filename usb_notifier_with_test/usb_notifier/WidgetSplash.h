@@ -10,7 +10,7 @@ class WidgetSplash : public QWidget
 {
   Q_OBJECT
 
-private:
+public:
   void PrepareGui();
 
 public:

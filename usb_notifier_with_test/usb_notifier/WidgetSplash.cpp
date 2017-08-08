@@ -34,18 +34,29 @@ void WidgetSplash::PrepareGui()
   } else {
     auxD = (scrCnt - 1) * 2;
     totalW = dw * auxD + dw;
-    startX = -(totalW/2);
+    startX = -(totalW/2) - dw/2;
     totalH = dh * auxD + dh;
-    startY = -(totalH/2);
+    startY = -(totalH/2) - dh/2;
   }
 
-  resize(totalW, totalH);
-  move(startX, startY);
+  if (Gen::Instance().Width != 0 && Gen::Instance().Height != 0) {
+    resize(Gen::Instance().Width, Gen::Instance().Height);
+    move(Gen::Instance().PosX, Gen::Instance().PosY);
+  } else {
+    resize(totalW, totalH);
+    move(startX, startY);
+  }
 
-  WriteDebug("Splash: "+ QString::number(totalW) + " "
-      + QString::number(totalH) + " "
-      + QString::number(startX) + " "
-      + QString::number(startY));
+//  int a = 16000;
+//  resize(a,a);
+//  move(-a/2,-a/2);
+
+  WriteDebug("[Splash]"
+             " screen: " + QString::number(scrCnt)
+             + " totalW: " + QString::number(totalW)
+             + " totalH: " + QString::number(totalH)
+             + " startX: " + QString::number(startX)
+             + " startY: " + QString::number(startY));
 }
 
 

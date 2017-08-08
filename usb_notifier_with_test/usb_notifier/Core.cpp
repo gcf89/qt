@@ -11,6 +11,7 @@
 #include <QPixmap>
 #include <QIcon>
 #include <QSettings>
+#include <QStringList>
 
 #ifdef Q_OS_WIN32
 #include <windows.h>
@@ -64,22 +65,44 @@ bool Core::Init(QString cmdPath)
 
     f.setFileName(confPath);
     if (!f.open(QIODevice::ReadOnly | QIODevice::Text)) {
-      SetTrayMessage("ERROR: cannot open config file: " + confPath);
+      WriteDebug("ERROR: cannot open config file: " + confPath);
       return false;
     }
-    QString targetPath = f.readAll();
+    QString data = f.readAll();
+    QStringList config = data.split("\n", QString::SkipEmptyParts);
     f.close();
 
+    if (config.isEmpty()) {
+      WriteDebug("ERROR: empty config: " + confPath);
+      return false;
+    }
+
+    QString targetPath = config.first();
     if (targetPath.startsWith("./")) {
       targetPath.remove(0, 1);
       targetPath.prepend(qApp->applicationDirPath());
+    }
+    WriteDebug("Source file: "+targetPath);
+
+    if (config.size() == 5) {
+      Gen::Instance().Width = config.at(1).toInt();
+      Gen::Instance().Height = config.at(2).toInt();
+      Gen::Instance().PosX = config.at(3).toInt();
+      Gen::Instance().PosY = config.at(4).toInt();
+
+      WriteDebug("Config gui: width " + config.at(1)
+                 + "\nheight: " + config.at(2)
+                 + "\nposx: " + config.at(3)
+                 + "\nposy: " + config.at(4));
+
+      mSplash->PrepareGui();
     }
 
     f.setFileName(targetPath);
     if (f.open(QIODevice::ReadOnly | QIODevice::Text)) {
       RunWatcher(targetPath);
     } else {
-      SetTrayMessage("ERROR: cannot open file: " + targetPath);
+      WriteDebug("ERROR: cannot open file: " + targetPath);
       return false;
     }
   } else {
@@ -92,7 +115,7 @@ bool Core::Init(QString cmdPath)
     if (f.open(QIODevice::ReadOnly | QIODevice::Text)) {
       RunWatcher(cmdPath);
     } else {
-      SetTrayMessage("ERROR: cannot open file:" + cmdPath);
+      WriteDebug("ERROR: cannot open file:" + cmdPath);
       return false;
     }
   }
@@ -177,6 +200,11 @@ bool Core::Parse(QString data, qint64 filesize)
                              << text << "(" << msg << ")"
                              << timestamp << "(" << tsp << ")";
 #endif
+                    // keyboard and mouse (at least) has no SN
+                    if (sn.isEmpty()) {
+                      WriteDebug("IGNORE: " + id + " " + text);
+                      continue;
+                    }
 
                     bool handled = true;
                     if ( msg == QString::fromUtf8("USB устройство разрешено") ) {
@@ -187,6 +215,9 @@ bool Core::Parse(QString data, qint64 filesize)
                         mHWGood << sn;
                         WriteDebug("inserted smth good, but not needed");
                       }
+
+                      // just in case
+                      mHWBad.removeOne(sn);
 
                     } else if ( msg == QString::fromUtf8("USB устройство заблокировано") ) {
                       mHWBad << sn;
@@ -650,8 +681,6 @@ void Core::LockSystem()
                           QString::fromUtf8("Разблокировка через 7с"),
                           QSystemTrayIcon::Information,
                           kTrayHideTimeout);
-    mGoodHardwareSNs.clear();
-    mBadHardwareSNs.clear();
     QTimer::singleShot(7000, this, SLOT(UnlockSystem()));
 #endif
   }

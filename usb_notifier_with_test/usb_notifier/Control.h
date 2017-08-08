@@ -1,8 +1,12 @@
 #pragma once
 
+#include <QString>
+#include <QDebug>
+
+
 // FOR RELEASE
 //#define ENABLE_LOCK
-//#define SPLASH_STAYS_ON_TOP
+#define SPLASH_STAYS_ON_TOP
 //#define DISABLE_CAD
 
 // FOR DEBUG
@@ -15,10 +19,26 @@
 //#define SILENT_TRAY
 
 
+class Gen
+{
+public:
+  int Width;
+  int Height;
+  int PosX;
+  int PosY;
 
+public:
+  static Gen& Instance()
+  {
+    static Gen theSingleInstance;
+    return theSingleInstance;
+  }
+private:
+  Gen(){}
+  Gen(const Gen& root);
+  Gen& operator=(const Gen&);
+};
 
-#include <QDebug>
-#include <QString>
 
 inline void WriteDebug(QString msg)
 {
