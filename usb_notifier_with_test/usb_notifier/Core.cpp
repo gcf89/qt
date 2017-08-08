@@ -178,6 +178,7 @@ bool Core::Parse(QString data, qint64 filesize)
                              << timestamp << "(" << tsp << ")";
 #endif
 
+                    bool handled = true;
                     if ( msg == QString::fromUtf8("USB устройство разрешено") ) {
 //                      if (!mHWInstalledRemoved.removeOne(sn)) {
 //                        mHWGood.removeOne(sn);
@@ -216,7 +217,13 @@ bool Core::Parse(QString data, qint64 filesize)
 
 
                     } else {
-                      qDebug() << "PASS:" << msg;
+                      handled = false;
+                    }
+
+                    if (handled) {
+                      WriteDebug("HANDLED: " + msg);
+                    } else {
+                      WriteDebug("PASS: " + msg);
                     }
 
                   }
@@ -256,8 +263,9 @@ bool Core::Parse(QString data, qint64 filesize)
     }
 
     if (err != 8) { // not all tags are found
-      auto next = it; // do not save (return false) file size (assume new data will arrive soon)
-      if (++next == lines.constEnd())  {
+      auto next = it; // do not save file pos (return false)
+      // file size (assume new data will arrive soon)
+      if (++next == lines.constEnd())  { // no new lines
         return false;
       }
     }
