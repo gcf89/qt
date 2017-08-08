@@ -18,45 +18,47 @@ void WidgetSplash::PrepareGui()
   p.setColor(backgroundRole(), Qt::black);
   setPalette(p);
 
-  int dw = QApplication::desktop()->screenGeometry().width();
-  int dh = QApplication::desktop()->screenGeometry().height();
-
-  int auxD = 0;
-  int totalW = 0;
-  int totalH = 0;
-  int startX = 0;
-  int startY = 0;
-
   int scrCnt = QApplication::desktop()->screenCount();
-  if (scrCnt < 2) {
-    totalW = dw;
-    totalH = dh;
-  } else {
-    auxD = (scrCnt - 1) * 2;
-    totalW = dw * auxD + dw;
-    startX = -(totalW/2) - dw/2;
-    totalH = dh * auxD + dh;
-    startY = -(totalH/2) - dh/2;
-  }
 
   if (Gen::Instance().Width != 0 && Gen::Instance().Height != 0) {
     resize(Gen::Instance().Width, Gen::Instance().Height);
     move(Gen::Instance().PosX, Gen::Instance().PosY);
   } else {
+    int dw = QApplication::desktop()->screenGeometry().width();
+    int dh = QApplication::desktop()->screenGeometry().height();
+
+#ifdef Q_OS_WIN
+    int totalW = 0;
+    int totalH = 0;
+    int posX = 0;
+    int posY = 0;
+
+    if (scrCnt < 2) {
+      totalW = dw;
+      totalH = dh;
+    } else {
+      int auxD = (scrCnt - 1) * 2;
+      totalW = dw * auxD + dw;
+      posX = -(totalW/2) - dw/2;
+      totalH = dh * auxD + dh;
+      posY = -(totalH/2) - dh/2;
+    }
     resize(totalW, totalH);
-    move(startX, startY);
+    move(posX, posY);
+#endif
+
+#ifdef Q_OS_UNIX
+    resize(dw, dh);
+    move(0, 0);
+#endif
   }
 
-//  int a = 16000;
-//  resize(a,a);
-//  move(-a/2,-a/2);
-
   WriteDebug("[Splash]"
-             " screen: " + QString::number(scrCnt)
-             + " totalW: " + QString::number(totalW)
-             + " totalH: " + QString::number(totalH)
-             + " startX: " + QString::number(startX)
-             + " startY: " + QString::number(startY));
+               " scrCnt: " + QString::number(scrCnt)
+             + " totalW: " + QString::number(width())
+             + " totalH: " + QString::number(height())
+             + " posX:   " + QString::number(geometry().x())
+             + " poxY:   " + QString::number(geometry().y()));
 }
 
 
@@ -65,7 +67,6 @@ WidgetSplash::WidgetSplash(QWidget *parent) :
   ui(new Ui::WidgetSplash)
 {
   ui->setupUi(this);
-  PrepareGui();
 }
 
 WidgetSplash::~WidgetSplash()
