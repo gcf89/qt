@@ -51,7 +51,7 @@ void DialogInfo::PrepareGui()
   int y = (dh - height()) / 2;
   move(x, y);
 
-  WriteDebug("Info coord: " + QString::number(x) + " " + QString::number(y));
+  WriteDebug("Dialog pos: " + QString::number(x) + " " + QString::number(y));
 }
 
 

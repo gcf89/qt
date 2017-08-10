@@ -53,14 +53,27 @@ BOOL UnlockSpecialKeys(PUINT fuiState)
 }
 #endif
 
+
 const int kHideTimeout = 1500;
 const int kTrayHideTimeout = 2000;
+const char* kLineSeparator = "},{";
+
+const QString kDevDisconnected = QString::fromUtf8("USB устройство извлечено");
+const QString kDevAccepted = QString::fromUtf8("USB устройство разрешено");
+const QString kDevRejected = QString::fromUtf8("USB устройство заблокировано");
+const QString kDevConnected = QString::fromUtf8("USB устройство присоединено");
+const QString kHVStarted = QString::fromUtf8("Драйвер гипервизора запущен");
+
+//const QString kHWConnected = "c";
+//const QString kHWDisconnected = "d";
+//const QString kHWAccepted = "a";
+//const QString kHWRejected = "r";
 
 
-bool Core::Init(QString cmdPath)
+bool Core::Init(QString path)
 {
   QFile f;
-  if (cmdPath.isEmpty()) {
+  if (path.isEmpty()) {
     QString confPath = qApp->applicationDirPath()+"/config";
 
     f.setFileName(confPath);
@@ -77,12 +90,7 @@ bool Core::Init(QString cmdPath)
       return false;
     }
 
-    QString targetPath = config.first();
-    if (targetPath.startsWith("./")) {
-      targetPath.remove(0, 1);
-      targetPath.prepend(qApp->applicationDirPath());
-    }
-    WriteDebug("Source file: "+targetPath);
+    path = config.first();
 
     if (config.size() == 5) {
       Gen::Instance().Width = config.at(1).toInt();
@@ -95,28 +103,31 @@ bool Core::Init(QString cmdPath)
                  + "\nposx: " + config.at(3)
                  + "\nposy: " + config.at(4));
     }
-    mSplash->PrepareGui();
+  }
 
-    f.setFileName(targetPath);
-    if (f.open(QIODevice::ReadOnly | QIODevice::Text)) {
-      RunWatcher(targetPath);
-    } else {
-      WriteDebug("ERROR: cannot open file: " + targetPath);
-      return false;
-    }
+  // run before RunWatcher
+  mSplash->PrepareGui();
+
+  if (path.startsWith("./")) {
+    path.remove(0, 1);
+    path.prepend(qApp->applicationDirPath());
+  }
+
+  mSourcePath = path;
+  WriteDebug("Source file: "+mSourcePath);
+
+  f.setFileName(mSourcePath);
+  if (f.open(QIODevice::ReadOnly | QIODevice::Text)) {
+//    QTextStream in(&f);
+//    in.setCodec(QTextCodec::codecForName("UTF8"));
+//    QString data = in.readAll();
+//    InitMandatoryHW(data);
+//    mLastFileSize = f.size();
+
+    RunWatcher(mSourcePath);
   } else {
-    if (cmdPath.startsWith("./")) {
-      cmdPath.remove(0, 1);
-      cmdPath.prepend(qApp->applicationDirPath());
-    }
-
-    f.setFileName(cmdPath);
-    if (f.open(QIODevice::ReadOnly | QIODevice::Text)) {
-      RunWatcher(cmdPath);
-    } else {
-      WriteDebug("ERROR: cannot open file:" + cmdPath);
-      return false;
-    }
+    WriteDebug("ERROR: cannot open file:" + mSourcePath);
+    return false;
   }
 
   return true;
@@ -137,6 +148,7 @@ void Core::RunWatcher(const QString& path)
   connect(mFileWatcher, SIGNAL(fileChanged(QString)),
           this, SLOT(onTargetFileChanged()));
 
+  // like on start init
   onTargetFileChanged();
 }
 
@@ -144,158 +156,177 @@ bool Core::Parse(QString data, qint64 filesize)
 {
   Q_UNUSED(filesize)
 
-  QString id;
-  QString serialNumber;
-  QString text;
-  QString timestamp;
-
-  data = data.simplified();
-
-  int fromPos = 0;
-  int toPos = 0;
-
-
-  QStringList lines = data.split("},{");
+  QStringList lines = data.simplified().split("},{");
   WriteDebug("Found lines: "+QString::number(lines.size()));
 
-  int err;
+  int ind = -1;
+
   for (auto it=lines.constBegin(); it!=lines.constEnd(); ++it) {
-    QString line = *it;
-
-    err = 0;
-    if ( (fromPos = line.indexOf( R"("id")")) != -1 ) {
-      ++err;
-      if ( (toPos = line.indexOf(',', fromPos)) != -1 ) {
-        ++err;
-        id = line.mid(fromPos, toPos - fromPos);
-
-        if ( (fromPos = line.indexOf( R"("serial_number")")) != -1 ) {
-          ++err;
-          if ( (toPos = line.indexOf( R"("})", fromPos) ) != -1 ) {
-            ++err;
-            serialNumber = line.mid(fromPos, toPos - fromPos);
-
-            if ( (fromPos = line.indexOf( R"("text")")) != -1 ) {
-              ++err;
-              if ( (toPos = line.indexOf( R"(",)", fromPos)) != -1 ) {
-                ++err;
-                text = line.mid(fromPos, toPos - fromPos);
-
-                if ( (fromPos = line.indexOf( R"("timestamp")")) != -1 ) {
-                  ++err;
-                  if ( (toPos = line.indexOf(R"(")", fromPos)) != -1 ) {
-                    ++err;
-                    fromPos +=1;
-                    timestamp = line.mid(fromPos, toPos - fromPos);
-
-                    QString sn = serialNumber.section(":",1,1).replace(0,1,"");
-                    QString msg = text.section(":",1,1).replace(0,1,"");
-                    QString tsp = timestamp.section(":",1,1).replace(0,1,"");
-
-#ifdef SHOW_DEBUG
-                    qDebug() << "\nNew device found:\n"
-                             << id
-                             << serialNumber << "(" << sn << ")"
-                             << text << "(" << msg << ")"
-                             << timestamp << "(" << tsp << ")";
-#endif
-                    // keyboard and mouse (at least) has no SN
-                    if (sn.isEmpty()) {
-                      WriteDebug("IGNORE: " + id + " " + text);
-                      continue;
-                    }
-
-                    bool handled = true;
-                    if ( msg == QString::fromUtf8("USB устройство разрешено") ) {
-
-                      if (mHWInstalledRemoved.removeOne(sn)) {
-                        WriteDebug("we got back needed hw! yay!");
-                      } else {
-                        mHWGood << sn;
-                        WriteDebug("inserted smth good, but not needed");
-                      }
-
-                      // just in case
-                      mHWBad.removeOne(sn);
-
-                    } else if ( msg == QString::fromUtf8("USB устройство заблокировано") ) {
-                      mHWBad << sn;
-                      WriteDebug("inserted smth bad");
-
-                    } else if ( msg == QString::fromUtf8("USB устройство извлечено") ) {
-
-                      if (mHWBad.removeOne(sn)) {
-
-                        WriteDebug("bad removed, cool!");
-
-                      } else if (mHWGood.removeOne(sn)) {
-
-                        WriteDebug("good removed, ok, nothing special here");
-
-                      } else {
-
-                        mHWInstalledRemoved << sn; //
-                        WriteDebug("removed smth needed, lock needed!");
-
-                      }
+    HW d = GetHWFrom(*it);
 
 
-                    } else {
-                      handled = false;
-                    }
-
-                    if (handled) {
-                      WriteDebug("HANDLED: " + msg);
-                    } else {
-                      WriteDebug("PASS: " + msg);
-                    }
-
-                  }
-                }
-              }
-            }
-          }
+    if (d.text == kDevConnected) {
+      if (!IsMandatory(d)) {
+        mHWConnected << d;
+        WriteDebug("!M connected: " + d.Str());
+      } else {
+        if ( (ind = mHWMandatoryDisconnected.indexOf(d)) != -1 ) {
+          mHWMandatoryDisconnected.removeAt(ind);
+          WriteDebug("M restored: " + d.Str());
+        } else {
+          WriteDebug("M reject: " + d.Str());
+          mHWRejected << d;
         }
       }
-    }
-
-    switch (err) {
-    case 0:
-      SetTrayMessage("Failed to find ID start!");
-      break;
-    case 1:
-      SetTrayMessage("Failed to find ID end!");
-      break;
-    case 2:
-      SetTrayMessage("Failed to find SERIAL start!");
-      break;
-    case 3:
-      SetTrayMessage("Failed to find SERIAL end!");
-      break;
-    case 4:
-      SetTrayMessage("Failed to find TEXT start!");
-      break;
-    case 5:
-      SetTrayMessage("Failed to find TEXT end!");
-      break;
-    case 6:
-      SetTrayMessage("Failed to find TIMESTAMP start!");
-      break;
-    case 7:
-      SetTrayMessage("Failed to find TIMESTAMP end!");
-      break;
-    }
-
-    if (err != 8) { // not all tags are found
-      auto next = it; // do not save file pos (return false)
-      // file size (assume new data will arrive soon)
-      if (++next == lines.constEnd())  { // no new lines
-        return false;
+    } else if (d.text == kDevDisconnected) {
+      if (!IsMandatory(d)) {
+        if ( (ind = mHWConnected.indexOf(d)) != -1 ) {
+          mHWConnected.removeAt(ind);
+          WriteDebug("!M remove connected: " + d.Str());
+        } else if ( (ind = mHWRejected.indexOf(d)) != -1 ) {
+          mHWRejected.removeAt(ind);
+          WriteDebug("!M remove rejected: " + d.Str());
+        } else if ( (ind = mHWAccepted.indexOf(d)) != -1 ) {
+          mHWAccepted.removeAt(ind);
+          WriteDebug("!M remove accepted: " + d.Str());
+        } else {
+          WriteDebug("??? !M remove (!connected): " + d.Str());
+        }
+      } else {
+        if ( (ind = mHWRejected.indexOf(d)) != -1) {
+          mHWRejected.removeAt(ind);
+          WriteDebug("M remove rejected: " + d.Str());
+        } else {
+          mHWMandatoryDisconnected << d;
+          WriteDebug("M disconnected: " + d.Str());
+        }
       }
+    } else if (d.text == kDevAccepted) {
+      if (!IsMandatory(d)) {
+        if ( (ind = mHWConnected.indexOf(d)) != -1 ) {
+          mHWConnected.removeAt(ind);
+          mHWAccepted << d;
+          WriteDebug("!M accept: " + d.Str());
+        } else if ( (ind = mHWRejected.indexOf(d)) != -1 ) {
+            mHWRejected.removeAt(ind);
+            mHWAccepted << d;
+            WriteDebug("!M rejected became accepted without reconnection" + d.Str());
+        } else {
+          mHWAccepted << d;
+          WriteDebug("??? !M accept (!connected, !rejected): " + d.Str());
+        }
+      } else {
+        if ( (ind = mHWRejected.indexOf(d)) != -1 ) {
+          mHWRejected.removeAt(ind);
+          WriteDebug("M (new) accepted: " + d.Str());
+        } else {
+          WriteDebug("??? M (new) missed connection stage (accept)" + d.Str());
+        }
+      }
+    } else if (d.text == kDevRejected) {
+      if (!IsMandatory(d)) {
+        if ( (ind = mHWConnected.indexOf(d)) != -1 ) {
+          mHWConnected.removeAt(ind);
+          mHWRejected << d;
+          WriteDebug("!M reject: " + d.Str());
+        } else if ( (ind = mHWAccepted.indexOf(d)) != -1 ) {
+          mHWAccepted.removeAt(ind);
+          mHWRejected << d;
+          WriteDebug("!M accepted became rejected without reconnection" + d.Str());
+        } else {
+          mHWRejected << d;
+          WriteDebug("??? !M reject (!connected): " + d.Str());
+        }
+      } else {
+        if ( (ind = mHWRejected.indexOf(d)) != -1 ) {
+          WriteDebug("M already rejected: " + d.Str());
+        } else if ( (ind = mHWMandatoryDisconnected.indexOf(d)) != -1 ) {
+          mHWMandatoryDisconnected.removeAt(ind);
+          WriteDebug("M accepted became rejected: " + d.Str());
+        } else {
+          mHWRejected << d;
+          WriteDebug("??? M (new) missed connection stage (reject): " + d.Str());
+        }
+      }
+    } else {
+      WriteDebug("PASS " + d.Str());
     }
   }
 
-  // comment if testing
+
+
+//  int ind = -1;
+
+//  for (auto it=lines.constBegin(); it!=lines.constEnd(); ++it) {
+//    HW d = GetHWFrom(*it);
+//    if (d.text == kDevConnected) {
+//      if (mIfClassIdIgnore.contains(d.if_class_id)) {
+//        mHWConnected << d;
+//        WriteDebug("Connected: " + d.Str());
+//      } else {
+//        mHWRejected << d;
+//        WriteDebug("Connected (auto reject): " + d.Str());
+//      }
+//    } else if (d.text == kDevDisconnected) {
+//      if (mIfClassIdIgnore.contains(d.if_class_id)) {
+//        WriteDebug("Not mandatory removed: " + d.Str());
+//        if ( (ind = mHWRejected.indexOf(d)) != -1) {
+//          mHWRejected.removeAt(ind);
+//          WriteDebug("Not mandatory rejected removed: " + d.Str());
+//        } else if ( (ind = mHWAccepted.indexOf(d)) != -1 ) {
+//          mHWAccepted.removeAt(ind);
+//          WriteDebug("Not mandatory accepted removed: " + d.Str());
+//        }
+//      } else {
+//        if ( (ind = mHWMandatoryConnected.indexOf(d)) != -1 ) {
+//          mHWMandatoryConnected.removeAt(ind);
+//          mHWMandatoryDisconnected << d;
+//          WriteDebug("Mandatory removed: " + d.Str());
+//        } else if ( (ind = mHWRejected.indexOf(d)) != -1 ) {
+//          mHWRejected.removeAt(ind);
+//          WriteDebug("Rejected removed: " + d.Str());
+//        } else if ( (ind = mHWAccepted.indexOf(d)) != -1 ) {
+//          // sane check
+//          mHWAccepted.removeAt(ind);
+//          WriteDebug("Accepted removed: " + d.Str());
+//        } else {
+//          mHWMandatoryDisconnected << d;
+//          WriteDebug("Mandatory (not in the list) removed: " + d.Str());
+//        }
+//      }
+//    } else if (d.text == kDevAccepted) {
+//      if ( (ind = mHWConnected.indexOf(d)) != -1 ) {
+//        mHWConnected.removeAt(ind);
+//        mHWAccepted << d;
+//        WriteDebug("Accepted: " + d.Str());
+//      } else if ( (ind = mHWRejected.indexOf(d)) != -1 ) {
+//        if (!mIfClassIdIgnore.contains(d.if_class_id)) { // maybe new accepted mandatory
+//          mHWRejected.removeAt(ind);
+//          mHWMandatoryConnected << d;
+//          WriteDebug("? new mandatory: " + d.Str());
+//        }
+//      } else {
+//        mHWAccepted << d;
+//        WriteDebug("Accepted (not prev connected): " + d.Str());
+//      }
+//    } else if (d.text == kDevRejected) {
+//      if ( (ind = mHWConnected.indexOf(d)) != -1 ) {
+//        mHWConnected.removeAt(ind);
+//        WriteDebug("Reject connected: " + d.Str());
+//      } else if ( (ind = mHWMandatoryConnected.indexOf(d)) != -1 ) {
+//        mHWMandatoryConnected.removeAt(ind);
+//        WriteDebug("Reject prev manadatory: " + d.Str());
+//      } else if ( (ind = mHWRejected.indexOf(d)) != -1 ) {
+//        mHWRejected.removeAt(ind);
+//      } else {
+//        WriteDebug("Rejected without connection: " + d.Str());
+//      }
+//      mHWRejected << d;
+//    } else {
+//      WriteDebug("PASS " + d.Str() + " " + d.text);
+//    }
+//  }
+
   ConsiderLock();
   return true;
 }
@@ -320,27 +351,31 @@ void Core::CreateTrayIcon()
 
 void Core::ConsiderLock()
 {
-  bool needLock = !mHWInstalledRemoved.isEmpty() || !mHWBad.isEmpty();
+  if (!mHWAccepted.isEmpty()) {
+    trayIcon->setToolTip(mHWAccepted.last().Msg());
+  }
+
+  bool needLock = !mHWMandatoryDisconnected.isEmpty() || !mHWRejected.isEmpty();
 
   QString msg;
   if (needLock) {
-    if (!mHWInstalledRemoved.isEmpty()) {
+    if (!mHWMandatoryDisconnected.isEmpty()) {
       msg.append(tr("Список извлеченного основного оборудования:"));
     }
-    for (auto it=mHWInstalledRemoved.constBegin(); it!=mHWInstalledRemoved.constEnd(); ++it) {
-      msg.append("\n").append(*it);
+    for (auto it=mHWMandatoryDisconnected.constBegin(); it!=mHWMandatoryDisconnected.constEnd(); ++it) {
+      msg.append("\n").append(it->Msg());
     }
 
     // separator
-    if (!mHWInstalledRemoved.isEmpty()) {
+    if (!mHWMandatoryDisconnected.isEmpty()) {
       msg.append("\n\n");
     }
 
-    if (!mHWBad.isEmpty()) {
+    if (!mHWRejected.isEmpty()) {
       msg.append(tr("Список вставленных запрещенных устройств:"));
     }
-    for (auto it=mHWBad.constBegin(); it!=mHWBad.constEnd(); ++it) {
-      msg.append("\n").append(*it);
+    for (auto it=mHWRejected.constBegin(); it!=mHWRejected.constEnd(); ++it) {
+      msg.append("\n").append(it->Msg());
     }
   }
 
@@ -361,40 +396,40 @@ void Core::onTargetFileChanged()
 
 
   if (mLastFileSize == f.size()) {
-    SetTrayMessage("Current size: "
-                   + QString::number(f.size())
-                   + "Last size: "
-                   + QString::number(mLastFileSize));
+    WriteDebug("Current size: "
+               + QString::number(f.size())
+               + "Last size: "
+               + QString::number(mLastFileSize));
 
   } else if (mLastFileSize < f.size()) {
 
     if (in.seek(mLastFileSize)) {
-      SetTrayMessage("Check for new data: "
-                     + QString::number(mLastFileSize)
-                     + ", "
-                     + QString::number(f.size()));
+      WriteDebug("Check for new data: "
+                 + QString::number(mLastFileSize)
+                 + ", "
+                 + QString::number(f.size()));
 
       if (Parse(in.read(f.size() - mLastFileSize), f.size())) {
         mLastFileSize = f.size();
 
-        SetTrayMessage("Parse OK: "
-                       + QString::number(mLastFileSize)
-                       + ", "
-                       + QString::number(f.size()));
-      } else {
-        SetTrayMessage("Parse FAILED: "
-                       + QString::number(mLastFileSize)
-                       + ", "
-                       + QString::number(f.size()));
-      }
-    } else {
-      SetTrayMessage("Error: 'seek' failed");
-    }
-  } else {
-    SetTrayMessage("File size is smaller than expected: "
+        WriteDebug("Parse OK: "
                    + QString::number(mLastFileSize)
                    + ", "
                    + QString::number(f.size()));
+      } else {
+        WriteDebug("Parse FAILED: "
+                   + QString::number(mLastFileSize)
+                   + ", "
+                   + QString::number(f.size()));
+      }
+    } else {
+      WriteDebug("Error: 'seek' failed");
+    }
+  } else {
+    WriteDebug("File size is smaller than expected: "
+               + QString::number(mLastFileSize)
+               + ", "
+               + QString::number(f.size()));
 
     if (f.size() != 0) {
       mLastFileSize = 0;
@@ -530,14 +565,276 @@ void Core::SetTrayIconAsLocked(bool locked)
 
 void Core::SetTrayMessage(QString message)
 {
+#ifndef SHOW_TRAY_DEBUG
+#ifndef SHOW_DEBUG
+  Q_UNUSED(message)
+#endif
+#endif
+
 #ifdef SHOW_TRAY_DEBUG
   trayIcon->setToolTip(message);
 #endif
 
-#ifdef SHOW_DEBUG
-  qDebug() << message;
-#endif
+//#ifdef SHOW_DEBUG
+//  qDebug() << message;
+//#endif
 }
+
+HW Core::GetHWFrom(const QString &line)
+{
+  int fromPos = 0;
+  int toPos = 0;
+  HW d;
+
+  if ( (fromPos = line.indexOf( R"("id":)")) != -1 ) {
+    if ( (toPos = line.indexOf(',', fromPos + 5)) != -1 ) {
+      d.id = line.mid(fromPos + 5, toPos - fromPos - 5);
+    }
+  }
+  if ( (fromPos = line.indexOf( R"("vendor_id":")")) != -1 ) {
+    if ( (toPos = line.indexOf('"', fromPos + 13)) != -1 ) {
+      d.vendor_id = line.mid(fromPos + 13, toPos - fromPos - 13);
+    }
+  }
+  if ( (fromPos = line.indexOf( R"("product_id":")")) != -1 ) {
+    if ( (toPos = line.indexOf('"', fromPos + 14)) != -1 ) {
+      d.product_id = line.mid(fromPos + 14, toPos - fromPos - 14);
+    }
+  }
+  if ( (fromPos = line.indexOf( R"("dev_class_id":")")) != -1 ) {
+    if ( (toPos = line.indexOf('"', fromPos + 16)) != -1 ) {
+      d.dev_class_id = line.mid(fromPos + 16, toPos - fromPos - 16);
+    }
+  }
+  if ( (fromPos = line.indexOf( R"("dev_subclass_id":")")) != -1 ) {
+    if ( (toPos = line.indexOf('"', fromPos + 19)) != -1 ) {
+      d.dev_subclass_id = line.mid(fromPos + 19, toPos - fromPos - 19);
+    }
+  }
+  if ( (fromPos = line.indexOf( R"("dev_protocol_id":")")) != -1 ) {
+    if ( (toPos = line.indexOf('"', fromPos + 19)) != -1 ) {
+      d.dev_protocol_id = line.mid(fromPos + 19, toPos - fromPos - 19);
+    }
+  }
+  if ( (fromPos = line.indexOf( R"("serial_number":")")) != -1 ) {
+    if ( (toPos = line.indexOf('"', fromPos + 17)) != -1 ) {
+      d.serial_number = line.mid(fromPos + 17, toPos - fromPos - 17);
+    }
+  }
+  if ( (fromPos = line.indexOf( R"("if_class_id":")")) != -1 ) {
+    if ( (toPos = line.indexOf('"', fromPos + 15)) != -1 ) {
+      d.if_class_id = line.mid(fromPos + 15, toPos - fromPos - 15);
+    }
+  }
+  if ( (fromPos = line.indexOf( R"("if_subclass_id":")")) != -1 ) {
+    if ( (toPos = line.indexOf('"', fromPos + 18)) != -1 ) {
+      d.if_subclass_id = line.mid(fromPos + 18, toPos - fromPos - 18);
+    }
+  }
+  if ( (fromPos = line.indexOf( R"("if_protocol_id":")")) != -1 ) {
+    if ( (toPos = line.indexOf('"', fromPos + 18)) != -1 ) {
+      d.if_protocol_id = line.mid(fromPos + 18, toPos - fromPos - 18);
+    }
+  }
+  if ( (fromPos = line.indexOf( R"("text":")")) != -1 ) {
+    if ( (toPos = line.indexOf('"', fromPos + 8)) != -1 ) {
+      d.text = line.mid(fromPos + 8, toPos - fromPos - 8);
+    }
+  }
+  if ( (fromPos = line.indexOf( R"("timestamp":")")) != -1 ) {
+    if ( (toPos = line.indexOf('"', fromPos + 13)) != -1 ) {
+      d.timestamp = line.mid(fromPos + 13, toPos - fromPos - 13);
+    }
+  }
+
+  return d;
+}
+
+bool Core::IsMandatory(const HW &d) const
+{
+  return d.dev_class_id != "00" || !mIfClassIdIgnore.contains(d.if_class_id);
+}
+
+//void Core::InitMandatoryHW(QString &data)
+//{
+////  QFile f(mSourcePath);
+////  if (!f.open(QIODevice::ReadOnly | QIODevice::Text)) {
+////    qDebug("Init mandaroty HW: cannot open "+mSourcePath);
+////    exit(-1001);
+////  }
+////  QTextStream in(&f);
+////  in.setCodec(QTextCodec::codecForName("UTF8"));
+
+//  data = data.simplified();
+//  QStringList lines = data.split(kLineSeparator);
+
+//  WriteDebug("Found lines: "+QString::number(lines.size()));
+
+//  for (auto it=lines.constBegin(); it!=lines.constEnd(); ++it) {
+//    HW d = GetHWFrom(*it);
+
+//    int ind = -1;
+
+//    if (d.text == kDevConnected) {
+//      if (!IsMandatory(d)) {
+//        mHWConnected << d;
+//        WriteDebug("!M connected: " + d.Str());
+//      } else {
+//        if ( (ind = mHWMandatoryDisconnected.indexOf(d)) != -1 ) {
+//          mHWMandatoryDisconnected.removeAt(ind);
+//          WriteDebug("M restored: " + d.Str());
+//        } else {
+//          WriteDebug("M reject: " + d.Str());
+//          mHWRejected << d;
+//        }
+//      }
+//    } else if (d.text == kDevDisconnected) {
+//      if (!IsMandatory(d)) {
+//        if ( (ind = mHWConnected.indexOf(d)) != -1 ) {
+//          mHWConnected.removeAt(ind);
+//          WriteDebug("!M remove connected: " + d.Str());
+//        } else if ( (ind = mHWRejected.indexOf(d)) != -1 ) {
+//          mHWRejected.removeAt(ind);
+//          WriteDebug("!M remove rejected: " + d.Str());
+//        } else if ( (ind = mHWAccepted.indexOf(d)) != -1 ) {
+//          mHWAccepted.removeAt(ind);
+//          WriteDebug("!M remove accepted: " + d.Str());
+//        } else {
+//          WriteDebug("??? !M remove (!connected): " + d.Str());
+//        }
+//      } else {
+//        if ( (ind = mHWRejected.indexOf(d)) != -1) {
+//          mHWRejected.removeAt(ind);
+//          WriteDebug("M remove rejected: " + d.Str());
+//        } else {
+//          mHWMandatoryDisconnected << d;
+//          WriteDebug("M disconnected: " + d.Str());
+//        }
+//      }
+//    } else if (d.text == kDevAccepted) {
+//      if (!IsMandatory(d)) {
+//        if ( (ind = mHWConnected.indexOf(d)) != -1 ) {
+//          mHWConnected.removeAt(ind);
+//          mHWAccepted << d;
+//          WriteDebug("!M accept: " + d.Str());
+//        } else if ( (ind = mHWRejected.indexOf(d)) != -1 ) {
+//            mHWRejected.removeAt(ind);
+//            mHWAccepted << d;
+//            WriteDebug("!M rejected became accepted without reconnection" + d.Str());
+//        } else {
+//          mHWAccepted << d;
+//          WriteDebug("??? !M accept (!connected, !rejected): " + d.Str());
+//        }
+//      } else {
+//        if ( (ind = mHWRejected.indexOf(d)) != -1 ) {
+//          mHWRejected.removeAt(ind);
+//          WriteDebug("M (new) accepted: " + d.Str());
+//        } else {
+//          WriteDebug("??? M (new) missed connection stage (accept)" + d.Str());
+//        }
+//      }
+//    } else if (d.text == kDevRejected) {
+//      if (!IsMandatory(d)) {
+//        if ( (ind = mHWConnected.indexOf(d)) != -1 ) {
+//          mHWConnected.removeAt(ind);
+//          mHWRejected << d;
+//          WriteDebug("!M reject: " + d.Str());
+//        } else if ( (ind = mHWAccepted.indexOf(d)) != -1 ) {
+//          mHWAccepted.removeAt(ind);
+//          mHWRejected << d;
+//          WriteDebug("!M accepted became rejected without reconnection" + d.Str());
+//        } else {
+//          mHWRejected << d;
+//          WriteDebug("??? !M reject (!connected): " + d.Str());
+//        }
+//      } else {
+//        if ( (ind = mHWRejected.indexOf(d)) != -1 ) {
+//          WriteDebug("M already rejected: " + d.Str());
+//        } else if ( (ind = mHWMandatoryDisconnected.indexOf(d)) != -1 ) {
+//          mHWMandatoryDisconnected.removeAt(ind);
+//          WriteDebug("M accepted became rejected: " + d.Str());
+//        } else {
+//          mHWRejected << d;
+//          WriteDebug("??? M (new) missed connection stage (reject): " + d.Str());
+//        }
+//      }
+//    } else {
+//      WriteDebug("PASS " + d.Str());
+//    }
+
+
+
+
+
+
+////    if (d.text == kDevConnected) {
+////      if (mIfClassIdIgnore.contains(d.if_class_id)) {
+////        mHWConnected << d;
+////        WriteDebug("Connected: " + d.Str());
+////      } else {
+////        // если не получим accept || reject добавим сразу
+////        mHWMandatoryConnected << d;
+////        WriteDebug("Connected (mandatory): " + d.Str());
+////      }
+////    } else if (d.text == kDevDisconnected) {
+////      if (mIfClassIdIgnore.contains(d.if_class_id)) {
+////        if ( (ind = mHWRejected.indexOf(d)) != -1) {
+////          mHWRejected.removeAt(ind);
+////          WriteDebug("Not mandatory rejected removed: " + d.Str());
+////        } else if ( (ind = mHWAccepted.indexOf(d)) != -1 ) {
+////          mHWAccepted.removeAt(ind);
+////          WriteDebug("Not mandatory accepted removed: " + d.Str());
+////        } else if ( (ind = mHWConnected.indexOf(d)) != -1 ) {
+////          mHWConnected.removeAt(ind);
+////          WriteDebug("Not mandatory removed: " + d.Str());
+////        } else {
+////          WriteDebug("Not mandatory removed (!connected): " + d.Str());
+////        }
+////      } else {
+////        if ( (ind = mHWMandatoryConnected.indexOf(d)) != -1 ) {
+////          mHWMandatoryConnected.removeAt(ind);
+////          mHWMandatoryDisconnected << d;
+////          WriteDebug("Mandatory removed: " + d.Str());
+////        } else if ( (ind = mHWRejected.indexOf(d)) != -1 ) {
+////          mHWRejected.removeAt(ind);
+////          WriteDebug("Rejected removed: " + d.Str());
+////        } else if ( (ind = mHWAccepted.indexOf(d)) != -1 ) {
+////          // sane check
+////          mHWAccepted.removeAt(ind);
+////          WriteDebug("Accepted removed: " + d.Str());
+////        } else {
+////          mHWMandatoryDisconnected << d;
+////          WriteDebug("Mandatory (not in the list) removed: " + d.Str());
+////        }
+////      }
+////    } else if (d.text == kDevAccepted) {
+////      if ( (ind = mHWConnected.indexOf(d)) != -1 ) {
+////        mHWConnected.removeAt(ind);
+////        WriteDebug("Accepted: " + d.Str());
+////      } else {
+////        WriteDebug("Accepted (not prev connected): " + d.Str());
+////      }
+////      mHWAccepted << d;
+////    } else if (d.text == kDevRejected) {
+////      int ind = -1;
+////      if ( (ind = mHWConnected.indexOf(d)) != -1 ) {
+////        mHWConnected.removeAt(ind);
+////        WriteDebug("Reject connected: " + d.Str());
+////      } else if ( (ind = mHWMandatoryConnected.indexOf(d)) != -1 ) {
+////        mHWMandatoryConnected.removeAt(ind);
+////        WriteDebug("Reject prev manadatory: " + d.Str());
+////      } else {
+////        WriteDebug("Rejected without connection: " + d.Str());
+////      }
+////      mHWRejected << d;
+////    } else {
+////      WriteDebug("PASS " + d.Str() + " " + d.text);
+////    }
+
+//  } // for
+
+////  ConsiderLock();
+//}
 
 
 
@@ -552,6 +849,9 @@ Core::Core(QObject *parent)
 #endif
   , mIsLocked(false)
 {
+  mIfClassIdIgnore.insert("08"); // mass storage device
+  mIfClassIdIgnore.insert("07"); // printer
+
   mIconGreen = QIcon(":/icons/lock-xxl-green.png");
   mIconRed = QIcon(":/icons/lock-xxl.png");
   CreateTrayIcon();
