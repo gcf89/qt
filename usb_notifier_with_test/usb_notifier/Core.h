@@ -32,6 +32,11 @@
 class HW
 {
 public:
+  static bool IsIgnored(const HW& d) {
+    return d.if_class_id == "09" && d.if_subclass_id == "00";
+  }
+
+public:
   QString id;
   QString vendor_id;
   QString product_id;
@@ -64,10 +69,14 @@ public:
 
   QString Msg() const {
     QString msg;
-    if (dev_class_id == "03") {
-      msg = "Устройство ввода " + MsgSN();
-    } else if (if_class_id == "08") {
+    if (if_class_id == "03" && if_subclass_id == "01" && if_protocol_id == "01") {
+      msg = "Устройство ввода (клавиатура) " + MsgSN();
+    } else if (if_class_id == "03" && if_subclass_id == "01" && if_protocol_id == "02") {
+      msg = "Устройство ввода (мышь) " + MsgSN();
+    } else if (if_class_id == "08" && if_subclass_id == "06") {
       msg = "Накопитель " + MsgSN();
+    } else if (if_class_id == "09" && if_subclass_id == "00") {
+      msg = "Устройство ввода (USB Hub) " + MsgSN();
     } else {
       msg = "Устройство " + ClassId() + " " + MsgSN();
     }
@@ -95,7 +104,11 @@ public:
   }
 
   QString MsgSN() const {
-    return "(SN: " + serial_number + ")";
+    if (!serial_number.isEmpty()) {
+      return "(SN: " + serial_number + ")";
+    } else {
+      return "";
+    }
   }
 
 };

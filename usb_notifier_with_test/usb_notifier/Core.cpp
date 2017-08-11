@@ -156,13 +156,18 @@ bool Core::Parse(QString data, qint64 filesize)
 {
   Q_UNUSED(filesize)
 
-  QStringList lines = data.simplified().split("},{");
+  QStringList lines = data.simplified().split(R"(},{"id":)");
   WriteDebug("Found lines: "+QString::number(lines.size()));
 
   int ind = -1;
 
   for (auto it=lines.constBegin(); it!=lines.constEnd(); ++it) {
     HW d = GetHWFrom(*it);
+
+    if (HW::IsIgnored(d)) {
+      WriteDebug("Ignored: " + d.Str());
+      continue;
+    }
 
 
     if (d.text == kDevConnected) {
@@ -253,7 +258,8 @@ bool Core::Parse(QString data, qint64 filesize)
     }
   }
 
-
+  ConsiderLock();
+  return true;
 
 //  int ind = -1;
 
@@ -327,8 +333,7 @@ bool Core::Parse(QString data, qint64 filesize)
 //    }
 //  }
 
-  ConsiderLock();
-  return true;
+
 }
 
 void Core::CreateTrayIcon()
@@ -351,9 +356,9 @@ void Core::CreateTrayIcon()
 
 void Core::ConsiderLock()
 {
-  if (!mHWAccepted.isEmpty()) {
-    trayIcon->setToolTip(mHWAccepted.last().Msg());
-  }
+//  if (!mHWAccepted.isEmpty()) {
+//    trayIcon->setToolTip(mHWAccepted.last().Msg());
+//  }
 
   bool needLock = !mHWMandatoryDisconnected.isEmpty() || !mHWRejected.isEmpty();
 
@@ -565,19 +570,11 @@ void Core::SetTrayIconAsLocked(bool locked)
 
 void Core::SetTrayMessage(QString message)
 {
-#ifndef SHOW_TRAY_DEBUG
-#ifndef SHOW_DEBUG
-  Q_UNUSED(message)
-#endif
-#endif
-
 #ifdef SHOW_TRAY_DEBUG
   trayIcon->setToolTip(message);
+#else
+  Q_UNUSED(message)
 #endif
-
-//#ifdef SHOW_DEBUG
-//  qDebug() << message;
-//#endif
 }
 
 HW Core::GetHWFrom(const QString &line)
@@ -586,11 +583,22 @@ HW Core::GetHWFrom(const QString &line)
   int toPos = 0;
   HW d;
 
-  if ( (fromPos = line.indexOf( R"("id":)")) != -1 ) {
-    if ( (toPos = line.indexOf(',', fromPos + 5)) != -1 ) {
-      d.id = line.mid(fromPos + 5, toPos - fromPos - 5);
+//  if ( (fromPos = line.indexOf( R"("id":)")) != -1 ) {
+//    if ( (toPos = line.indexOf(',', fromPos + 5)) != -1 ) {
+//      d.id = line.mid(fromPos + 5, toPos - fromPos - 5);
+//    }
+//  }
+
+  if ( (fromPos = line.indexOf(',')) != -1 ) {
+    QString id = line.mid(0, fromPos);
+    int ind = -1;
+    if ( (ind = id.indexOf(':')) != -1 ) {
+      d.id = id.section(':',1);
+    } else {
+      d.id = id;
     }
   }
+
   if ( (fromPos = line.indexOf( R"("vendor_id":")")) != -1 ) {
     if ( (toPos = line.indexOf('"', fromPos + 13)) != -1 ) {
       d.vendor_id = line.mid(fromPos + 13, toPos - fromPos - 13);

@@ -2,11 +2,12 @@
 
 #include <QString>
 #include <QDebug>
+#include <QDateTime>
 
 
 // FOR RELEASE
-//#define ENABLE_LOCK
-//#define SPLASH_STAYS_ON_TOP
+#define ENABLE_LOCK
+#define SPLASH_STAYS_ON_TOP
 //#define DISABLE_CAD
 
 // FOR DEBUG
@@ -43,7 +44,7 @@ private:
 inline void WriteDebug(QString msg)
 {
 #ifdef SHOW_DEBUG
-  qDebug() << msg;
+  qDebug()  << "[" << QDateTime::currentDateTime().toString() << "]" << msg;
 #else
   Q_UNUSED(msg)
 #endif
