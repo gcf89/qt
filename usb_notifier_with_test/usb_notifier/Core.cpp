@@ -258,7 +258,7 @@ bool Core::Parse(QString data, qint64 filesize)
     }
   }
 
-  ConsiderLock();
+//  ConsiderLock();
   return true;
 
 //  int ind = -1;
