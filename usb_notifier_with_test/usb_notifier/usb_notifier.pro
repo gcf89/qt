@@ -11,6 +11,8 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TARGET = usb_notifier
 TEMPLATE = app
 
+DESTDIR = ../bin
+
 # The following define makes your compiler emit warnings if you use
 # any feature of Qt which as been marked as deprecated (the exact warnings
 # depend on your compiler). Please consult the documentation of the
@@ -27,7 +29,8 @@ QMAKE_CXXFLAGS += -std=c++11
 SOURCES += main.cpp\
     DialogInfo.cpp \
     WidgetSplash.cpp \
-    Core.cpp
+    Core.cpp \
+    Control.cpp
 
 HEADERS  += \
     DialogInfo.h \

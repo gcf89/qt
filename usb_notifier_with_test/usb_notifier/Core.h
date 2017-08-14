@@ -161,8 +161,9 @@ public:
 public:
   bool Init(QString path);
 
+public slots:
+  void RunWatcher();
 public:
-  void RunWatcher(const QString& path);
   bool Parse(QString data, qint64 filesize);
   void CreateTrayIcon();
   void ConsiderLock();

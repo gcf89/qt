@@ -1,5 +1,6 @@
 #include <QApplication>
 #include <QFile>
+#include <QFileInfo>
 #include <QTextStream>
 #include <QMessageBox>
 #include <QTextCodec>
@@ -12,6 +13,8 @@
 #include <QIcon>
 #include <QSettings>
 #include <QStringList>
+#include <QElapsedTimer>
+#include <QProcess>
 
 #ifdef Q_OS_WIN32
 #include <windows.h>
@@ -56,22 +59,28 @@ BOOL UnlockSpecialKeys(PUINT fuiState)
 
 const int kHideTimeout = 1500;
 const int kTrayHideTimeout = 2000;
-const char* kLineSeparator = "},{";
+const int kWinHVRequestTimeout = 1000;
 
 const QString kDevDisconnected = QString::fromUtf8("USB устройство извлечено");
-const QString kDevAccepted = QString::fromUtf8("USB устройство разрешено");
 const QString kDevRejected = QString::fromUtf8("USB устройство заблокировано");
 const QString kDevConnected = QString::fromUtf8("USB устройство присоединено");
 const QString kHVStarted = QString::fromUtf8("Драйвер гипервизора запущен");
 
-//const QString kHWConnected = "c";
-//const QString kHWDisconnected = "d";
-//const QString kHWAccepted = "a";
-//const QString kHWRejected = "r";
+#ifdef Q_OS_WIN
+const QString kDevAccepted = QString::fromUtf8("USB устройство разрешено");
+#endif
+#ifdef Q_OS_UNIX
+const QString kDevAccepted = QString::fromUtf8("USB устройство разрешено");
+#endif
+
+
+
 
 
 bool Core::Init(QString path)
 {
+  WriteDebug("[" + QDateTime::currentDateTime().toString() + "]" + "Init start...");
+#ifdef Q_OS_UNIX
   QFile f;
   if (path.isEmpty()) {
     QString confPath = qApp->applicationDirPath()+"/config";
@@ -124,19 +133,82 @@ bool Core::Init(QString path)
 //    InitMandatoryHW(data);
 //    mLastFileSize = f.size();
 
-    RunWatcher(mSourcePath);
+    WriteDebug("[" + QDateTime::currentDateTime().toString() + "]" + "Init done");
+
+    RunWatcher();
   } else {
     WriteDebug("ERROR: cannot open file:" + mSourcePath);
     return false;
   }
+#endif
+
+#ifdef Q_OS_WIN32
+  if (path.isEmpty()) {
+    QString confPath = qApp->applicationDirPath()+"/config";
+
+    QFile f;
+    f.setFileName(confPath);
+    if (!f.open(QIODevice::ReadOnly | QIODevice::Text)) {
+      WriteDebug("ERROR: cannot open config file: " + confPath);
+      return false;
+    }
+    QString data = f.readAll();
+    QStringList config = data.split("\n", QString::SkipEmptyParts);
+    f.close();
+
+    if (config.isEmpty()) {
+      WriteDebug("ERROR: empty config: " + confPath);
+      return false;
+    }
+
+    path = config.first();
+
+    if (config.size() == 5) {
+      Gen::Instance().Width = config.at(1).toInt();
+      Gen::Instance().Height = config.at(2).toInt();
+      Gen::Instance().PosX = config.at(3).toInt();
+      Gen::Instance().PosY = config.at(4).toInt();
+
+      WriteDebug("Config gui: width " + config.at(1)
+                 + "\nheight: " + config.at(2)
+                 + "\nposx: " + config.at(3)
+                 + "\nposy: " + config.at(4));
+    }
+  }
+
+  // run before RunWatcher
+  mSplash->PrepareGui();
+
+  if (path.startsWith("./")) {
+    path.remove(0, 1);
+    path.prepend(qApp->applicationDirPath());
+  }
+
+  QFileInfo fi(path);
+  if (!fi.exists()) {
+    WriteDebug("ERR:" + path + "does not exist");
+    return false;
+  }
+//  if (fi.isExecutable()) {
+//    WriteDebug("ERR:" + path + "cannot be executed");
+//    return false;
+//  }
+
+  mSourcePath = path;
+  WriteDebug("Hypervisor: "+mSourcePath);
+
+  WriteDebug("[" + QDateTime::currentDateTime().toString() + "]" + "Init done");
+
+  RunWatcher();
+#endif
+
 
   return true;
 }
 
-void Core::RunWatcher(const QString& path)
+void Core::RunWatcher()
 {
-  mSourcePath = path;
-
+#ifdef Q_OS_UNIX
 //  QFile f(mSourcePath);
 //  mLastFileSize = f.size();
 
@@ -150,13 +222,91 @@ void Core::RunWatcher(const QString& path)
 
   // like on start init
   onTargetFileChanged();
+#endif
+
+#ifdef Q_OS_WIN
+  QElapsedTimer t;
+  t.start();
+
+  QProcess p;
+  QString prog;
+  QStringList params;
+
+#ifdef WIN_HV_MOCK
+  prog = "win_hv_provider_mock.exe";
+  QString mock_data = "windata";
+  params << mock_data;
+
+  QFileInfo fi;
+  fi.setFile(prog);
+  if (!fi.exists()) {
+    WriteDebug("ERR:" + prog + "does not exist");
+    return;
+  }
+//  if (!fi.isExecutable()) {
+//    WriteDebug("ERR:" + prog + "cannot be executed");
+//    return;
+//  }
+  fi.setFile(mock_data);
+  if (!fi.exists()) {
+    WriteDebug("ERR:" + mock_data + "does not exist");
+    return;
+  }
+#else
+  prog = mSourcePath;
+  params << "-cv";
+#endif
+
+  p.start(prog, params);
+
+  bool ok = false;
+  if (!p.waitForStarted()) {
+    WriteDebug("WARN: "+p.program()+" start time limit reached");
+  } else if (!p.waitForFinished()) {
+    WriteDebug("WARN: "+p.program()+" finish time limit reached");
+  } else {
+    ok = true;
+  }
+
+  QString data;
+  if (ok) {
+    data = p.readAll();
+    WriteDebug("Process data:\n"+data+
+               "\nExit code: "+QString::number(p.exitCode()));
+  }
+
+  if (!data.isEmpty()) {
+//    mHWMandatoryDisconnected.clear();
+//    mHWAccepted.clear();
+//    mHWRejected.clear();
+//    mHWConnected.clear();
+    Parse(data, 0);
+  } else {
+    WriteDebug("No output from: "+p.program());
+  }
+
+  WriteDebug("Parse took: "+QString::number(t.elapsed()));
+
+  qint64 delay = kWinHVRequestTimeout - t.elapsed();
+  if (delay < 0) {
+    delay = 0;
+  }
+  QTimer::singleShot(delay, this, SLOT(RunWatcher()));
+#endif
 }
 
 bool Core::Parse(QString data, qint64 filesize)
 {
   Q_UNUSED(filesize)
 
-  QStringList lines = data.simplified().split(R"(},{"id":)");
+  QStringList lines;
+#ifdef Q_OS_UNIX
+  lines = data.simplified().split(R"(},{"id":)");
+#endif
+#ifdef Q_OS_WIN
+  data = data.simplified().replace(R"(\")", R"(")");
+  lines = data.split(R"("raw")");
+#endif
   WriteDebug("Found lines: "+QString::number(lines.size()));
 
   int ind = -1;
@@ -258,7 +408,7 @@ bool Core::Parse(QString data, qint64 filesize)
     }
   }
 
-//  ConsiderLock();
+  ConsiderLock();
   return true;
 
 //  int ind = -1;
@@ -583,12 +733,7 @@ HW Core::GetHWFrom(const QString &line)
   int toPos = 0;
   HW d;
 
-//  if ( (fromPos = line.indexOf( R"("id":)")) != -1 ) {
-//    if ( (toPos = line.indexOf(',', fromPos + 5)) != -1 ) {
-//      d.id = line.mid(fromPos + 5, toPos - fromPos - 5);
-//    }
-//  }
-
+#ifdef Q_OS_UNIX
   if ( (fromPos = line.indexOf(',')) != -1 ) {
     QString id = line.mid(0, fromPos);
     int ind = -1;
@@ -598,6 +743,11 @@ HW Core::GetHWFrom(const QString &line)
       d.id = id;
     }
   }
+#endif
+
+#ifdef Q_OS_WIN
+  d.id = ""; // ignore
+#endif
 
   if ( (fromPos = line.indexOf( R"("vendor_id":")")) != -1 ) {
     if ( (toPos = line.indexOf('"', fromPos + 13)) != -1 ) {
