@@ -17,8 +17,8 @@ private Q_SLOTS:
   void testInit2();
   void testInit3();
   void testInit4();
-  // тоже самое но с ошибками
   void testInit5();
+  // тоже самое но с ошибками
   // порядок работы норм.
   // порядок работы кривой
 };
@@ -274,33 +274,33 @@ void Test_parserTest::testInit5()
                  "timestamp":"2017-08-06T07:22:33"},{"id":1,
                  "value":{"raw":{"device_descriptor":{
                  "vendor_id":"1","product_id":"1","dev_class_id":"00","dev_subclass_id":"00",
-                 "dev_protocol_id":"00","serial_number":"mass1"},"interfaces":[{"if_class_id":"08",
-                 "if_subclass_id":"06","if_protocol_id":"50"}]}},"text":"USB устройство извлечено",
+                 "dev_protocol_id":"00","serial_number":"kb_good"},"interfaces":[{"if_class_id":"03",
+                 "if_subclass_id":"01","if_protocol_id":"01"}]}},"text":"USB устройство извлечено",
                  "timestamp":"2017-08-06T07:22:51"},{"id":2,
                  "value":{"raw":{"device_descriptor":{"vendor_id":"2","product_id":"2"
-                 ,"dev_class_id":"03","dev_subclass_id":"00","dev_protocol_id":"00",
-                 "serial_number":"keyboard1"},"interfaces":[{"if_class_id":"00",
-                 "if_subclass_id":"00","if_protocol_id":"00"}]}},"text":"USB устройство присоединено",
+                 ,"dev_class_id":"03","dev_subclass_id":"01","dev_protocol_id":"02",
+                 "serial_number":"mouse_good"},"interfaces":[{"if_class_id":"00",
+                 "if_subclass_id":"00","if_protocol_id":"00"}]}},"text":"USB устройство извлечено",
                  "timestamp":"2017-08-06T07:22:51"},{"id":3,
                  "value":{"raw":{"device_descriptor":{"vendor_id":"8564","product_id":"1000"
-                 ,"dev_class_id":"01","dev_subclass_id":"00","dev_protocol_id":"00",
-                 "serial_number":"audio1"},"interfaces":[{"if_class_id":"08",
+                 ,"dev_class_id":"03","dev_subclass_id":"01","dev_protocol_id":"01",
+                 "serial_number":"kb_bad"},"interfaces":[{"if_class_id":"08",
                  "if_subclass_id":"00","if_protocol_id":"00"}]}},"text":"USB устройство присоединено",
                  "timestamp":"2017-08-06T07:22:51"},{"id":4,
                  "value":{"raw":{"device_descriptor":{"vendor_id":"8564","product_id":"1000"
-                 ,"dev_class_id":"00","dev_subclass_id":"00","dev_protocol_id":"00",
-                 "serial_number":"DFT5NG1T"},"interfaces":[{"if_class_id":"08",
-                 "if_subclass_id":"06","if_protocol_id":"50"}]}},"text":"USB устройство извлечено",
+                 ,"dev_class_id":"03","dev_subclass_id":"01","dev_protocol_id":"01",
+                 "serial_number":"kb_bad"},"interfaces":[{"if_class_id":"08",
+                 "if_subclass_id":"06","if_protocol_id":"50"}]}},"text":"USB устройство разрешено",
                  "timestamp":"2017-08-06T07:22:51"},{"id":5,
                  "value":{"raw":{"device_descriptor":{"vendor_id":"8564","product_id":"1000"
-                 ,"dev_class_id":"00","dev_subclass_id":"00","dev_protocol_id":"00",
-                 "serial_number":"DFT5NG1T"},"interfaces":[{"if_class_id":"08",
-                 "if_subclass_id":"06","if_protocol_id":"50"}]}},"text":"USB устройство извлечено",
+                 ,"dev_class_id":"03","dev_subclass_id":"01","dev_protocol_id":"02",
+                 "serial_number":"mouse_bad"},"interfaces":[{"if_class_id":"08",
+                 "if_subclass_id":"06","if_protocol_id":"50"}]}},"text":"USB устройство присоединено",
                  "timestamp":"2017-08-06T07:22:51"},{"id":6,
                  "value":{"raw":{"device_descriptor":{"vendor_id":"8564","product_id":"1000"
-                 ,"dev_class_id":"00","dev_subclass_id":"00","dev_protocol_id":"00",
-                 "serial_number":"DFT5NG1T"},"interfaces":[{"if_class_id":"08",
-                 "if_subclass_id":"06","if_protocol_id":"50"}]}},"text":"USB устройство извлечено",
+                 ,"dev_class_id":"03","dev_subclass_id":"01","dev_protocol_id":"02",
+                 "serial_number":"mouse_bad"},"interfaces":[{"if_class_id":"08",
+                 "if_subclass_id":"06","if_protocol_id":"50"}]}},"text":"USB устройство разрешено",
                  "timestamp":"2017-08-06T07:22:51"})";
 
   Core c;
@@ -309,7 +309,7 @@ void Test_parserTest::testInit5()
   QCOMPARE(c.mHWAccepted.size(), 0);
   QCOMPARE(c.mHWRejected.size(), 2);
   QCOMPARE(c.mHWConnected.size(), 0);
-  QCOMPARE(c.mHWMandatoryDisconnected.size(), 0);
+  QCOMPARE(c.mHWMandatoryDisconnected.size(), 2);
 }
 
 

@@ -31,6 +31,8 @@ int main(int argc, char *argv[])
 //  in.setCodec(QTextCodec::codecForName("UTF8"));
 
 //  std::cout << in.readAll().toStdString();
+#ifdef Q_OS_WIN
   std::cout << f.readAll().toStdString();
+#endif
   return 0;
 }
