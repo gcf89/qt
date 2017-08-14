@@ -8,17 +8,17 @@
 
 
 // FOR RELEASE
-#define ENABLE_LOCK
-#define SPLASH_STAYS_ON_TOP
-#define DISABLE_CAD
+//#define ENABLE_LOCK
+//#define SPLASH_STAYS_ON_TOP
+//#define DISABLE_CAD
 
 // FOR DEBUG
 //#define SHOW_TRAY_CONTEXT_MENU
 //#define AUTO_UNLOCK_ENABLE
 //#define SHOW_TRAY_DEBUG
-//#define CONSOLE_DEBUG
+#define CONSOLE_DEBUG
 //#define GUI_DEBUG
-//#define WIN_HV_MOCK
+#define WIN_HV_MOCK
 
 // FEATURES
 #define SILENT_TRAY

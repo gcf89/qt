@@ -371,12 +371,14 @@ bool Core::Parse(QString data, qint64 filesize)
           WriteDebug("??? !M accept (!connected, !rejected): " + d.Str());
         }
       } else {
-        if ( (ind = mHWRejected.indexOf(d)) != -1 ) {
-          mHWRejected.removeAt(ind);
-          WriteDebug("M (new) accepted: " + d.Str());
-        } else {
-          WriteDebug("??? M (new) missed connection stage (accept)" + d.Str());
-        }
+        // disable, cause hv cannot properly restrict devices
+//        if ( (ind = mHWRejected.indexOf(d)) != -1 ) {
+//          mHWRejected.removeAt(ind);
+//          WriteDebug("M (new) accepted: " + d.Str());
+//        } else {
+//          WriteDebug("??? M (new) missed connection stage (accept)" + d.Str());
+//        }
+        WriteDebug("M ignore 'accepted'");
       }
     } else if (d.text == kDevRejected) {
       if (!IsMandatory(d)) {
