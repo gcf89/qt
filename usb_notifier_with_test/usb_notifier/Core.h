@@ -70,7 +70,7 @@ public:
         ;
   }
 
-  bool IsParseOk() {
+  bool IsParseOk() const {
     return !id.isEmpty()
         && !vendor_id.isEmpty()
         && !product_id.isEmpty()

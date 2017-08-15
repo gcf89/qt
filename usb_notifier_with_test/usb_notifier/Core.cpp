@@ -346,7 +346,7 @@ bool Core::Parse(QString data, qint64 filesize)
           mHWAccepted.removeAt(ind);
           WriteDebug("!M remove accepted: " + d.Str());
         } else {
-          WriteDebug("??? !M remove (!connected): " + d.Str());
+          WriteDebug("ERR: !M remove (!connected): " + d.Str());
         }
       } else {
         if ( (ind = mHWRejected.indexOf(d)) != -1 ) {
@@ -362,6 +362,8 @@ bool Core::Parse(QString data, qint64 filesize)
           } else {
             WriteDebug("M disconnected: " + d.Str());
           }
+        } else {
+          WriteDebug("ERR: M removed (!rejected, !connected)");
         }
       }
     } else if (d.text == kDevAccepted) {
@@ -433,7 +435,7 @@ bool Core::Parse(QString data, qint64 filesize)
     }
   }
 
-  ConsiderLock();
+//  ConsiderLock();
   return true;
 }
 
@@ -761,190 +763,9 @@ HW Core::GetHWFrom(const QString &line)
 
 bool Core::IsMandatory(const HW &d) const
 {
-  return d.dev_class_id != "00" || !mIfClassIdIgnore.contains(d.if_class_id);
+//  return d.dev_class_id != "00" || !mIfClassIdIgnore.contains(d.if_class_id);
+  return HW::IsKeyboard(d) || HW::IsMouse(d);
 }
-
-//void Core::InitMandatoryHW(QString &data)
-//{
-////  QFile f(mSourcePath);
-////  if (!f.open(QIODevice::ReadOnly | QIODevice::Text)) {
-////    qDebug("Init mandaroty HW: cannot open "+mSourcePath);
-////    exit(-1001);
-////  }
-////  QTextStream in(&f);
-////  in.setCodec(QTextCodec::codecForName("UTF8"));
-
-//  data = data.simplified();
-//  QStringList lines = data.split(kLineSeparator);
-
-//  WriteDebug("Found lines: "+QString::number(lines.size()));
-
-//  for (auto it=lines.constBegin(); it!=lines.constEnd(); ++it) {
-//    HW d = GetHWFrom(*it);
-
-//    int ind = -1;
-
-//    if (d.text == kDevConnected) {
-//      if (!IsMandatory(d)) {
-//        mHWConnected << d;
-//        WriteDebug("!M connected: " + d.Str());
-//      } else {
-//        if ( (ind = mHWMandatoryDisconnected.indexOf(d)) != -1 ) {
-//          mHWMandatoryDisconnected.removeAt(ind);
-//          WriteDebug("M restored: " + d.Str());
-//        } else {
-//          WriteDebug("M reject: " + d.Str());
-//          mHWRejected << d;
-//        }
-//      }
-//    } else if (d.text == kDevDisconnected) {
-//      if (!IsMandatory(d)) {
-//        if ( (ind = mHWConnected.indexOf(d)) != -1 ) {
-//          mHWConnected.removeAt(ind);
-//          WriteDebug("!M remove connected: " + d.Str());
-//        } else if ( (ind = mHWRejected.indexOf(d)) != -1 ) {
-//          mHWRejected.removeAt(ind);
-//          WriteDebug("!M remove rejected: " + d.Str());
-//        } else if ( (ind = mHWAccepted.indexOf(d)) != -1 ) {
-//          mHWAccepted.removeAt(ind);
-//          WriteDebug("!M remove accepted: " + d.Str());
-//        } else {
-//          WriteDebug("??? !M remove (!connected): " + d.Str());
-//        }
-//      } else {
-//        if ( (ind = mHWRejected.indexOf(d)) != -1) {
-//          mHWRejected.removeAt(ind);
-//          WriteDebug("M remove rejected: " + d.Str());
-//        } else {
-//          mHWMandatoryDisconnected << d;
-//          WriteDebug("M disconnected: " + d.Str());
-//        }
-//      }
-//    } else if (d.text == kDevAccepted) {
-//      if (!IsMandatory(d)) {
-//        if ( (ind = mHWConnected.indexOf(d)) != -1 ) {
-//          mHWConnected.removeAt(ind);
-//          mHWAccepted << d;
-//          WriteDebug("!M accept: " + d.Str());
-//        } else if ( (ind = mHWRejected.indexOf(d)) != -1 ) {
-//            mHWRejected.removeAt(ind);
-//            mHWAccepted << d;
-//            WriteDebug("!M rejected became accepted without reconnection" + d.Str());
-//        } else {
-//          mHWAccepted << d;
-//          WriteDebug("??? !M accept (!connected, !rejected): " + d.Str());
-//        }
-//      } else {
-//        if ( (ind = mHWRejected.indexOf(d)) != -1 ) {
-//          mHWRejected.removeAt(ind);
-//          WriteDebug("M (new) accepted: " + d.Str());
-//        } else {
-//          WriteDebug("??? M (new) missed connection stage (accept)" + d.Str());
-//        }
-//      }
-//    } else if (d.text == kDevRejected) {
-//      if (!IsMandatory(d)) {
-//        if ( (ind = mHWConnected.indexOf(d)) != -1 ) {
-//          mHWConnected.removeAt(ind);
-//          mHWRejected << d;
-//          WriteDebug("!M reject: " + d.Str());
-//        } else if ( (ind = mHWAccepted.indexOf(d)) != -1 ) {
-//          mHWAccepted.removeAt(ind);
-//          mHWRejected << d;
-//          WriteDebug("!M accepted became rejected without reconnection" + d.Str());
-//        } else {
-//          mHWRejected << d;
-//          WriteDebug("??? !M reject (!connected): " + d.Str());
-//        }
-//      } else {
-//        if ( (ind = mHWRejected.indexOf(d)) != -1 ) {
-//          WriteDebug("M already rejected: " + d.Str());
-//        } else if ( (ind = mHWMandatoryDisconnected.indexOf(d)) != -1 ) {
-//          mHWMandatoryDisconnected.removeAt(ind);
-//          WriteDebug("M accepted became rejected: " + d.Str());
-//        } else {
-//          mHWRejected << d;
-//          WriteDebug("??? M (new) missed connection stage (reject): " + d.Str());
-//        }
-//      }
-//    } else {
-//      WriteDebug("PASS " + d.Str());
-//    }
-
-
-
-
-
-
-////    if (d.text == kDevConnected) {
-////      if (mIfClassIdIgnore.contains(d.if_class_id)) {
-////        mHWConnected << d;
-////        WriteDebug("Connected: " + d.Str());
-////      } else {
-////        // если не получим accept || reject добавим сразу
-////        mHWMandatoryConnected << d;
-////        WriteDebug("Connected (mandatory): " + d.Str());
-////      }
-////    } else if (d.text == kDevDisconnected) {
-////      if (mIfClassIdIgnore.contains(d.if_class_id)) {
-////        if ( (ind = mHWRejected.indexOf(d)) != -1) {
-////          mHWRejected.removeAt(ind);
-////          WriteDebug("Not mandatory rejected removed: " + d.Str());
-////        } else if ( (ind = mHWAccepted.indexOf(d)) != -1 ) {
-////          mHWAccepted.removeAt(ind);
-////          WriteDebug("Not mandatory accepted removed: " + d.Str());
-////        } else if ( (ind = mHWConnected.indexOf(d)) != -1 ) {
-////          mHWConnected.removeAt(ind);
-////          WriteDebug("Not mandatory removed: " + d.Str());
-////        } else {
-////          WriteDebug("Not mandatory removed (!connected): " + d.Str());
-////        }
-////      } else {
-////        if ( (ind = mHWMandatoryConnected.indexOf(d)) != -1 ) {
-////          mHWMandatoryConnected.removeAt(ind);
-////          mHWMandatoryDisconnected << d;
-////          WriteDebug("Mandatory removed: " + d.Str());
-////        } else if ( (ind = mHWRejected.indexOf(d)) != -1 ) {
-////          mHWRejected.removeAt(ind);
-////          WriteDebug("Rejected removed: " + d.Str());
-////        } else if ( (ind = mHWAccepted.indexOf(d)) != -1 ) {
-////          // sane check
-////          mHWAccepted.removeAt(ind);
-////          WriteDebug("Accepted removed: " + d.Str());
-////        } else {
-////          mHWMandatoryDisconnected << d;
-////          WriteDebug("Mandatory (not in the list) removed: " + d.Str());
-////        }
-////      }
-////    } else if (d.text == kDevAccepted) {
-////      if ( (ind = mHWConnected.indexOf(d)) != -1 ) {
-////        mHWConnected.removeAt(ind);
-////        WriteDebug("Accepted: " + d.Str());
-////      } else {
-////        WriteDebug("Accepted (not prev connected): " + d.Str());
-////      }
-////      mHWAccepted << d;
-////    } else if (d.text == kDevRejected) {
-////      int ind = -1;
-////      if ( (ind = mHWConnected.indexOf(d)) != -1 ) {
-////        mHWConnected.removeAt(ind);
-////        WriteDebug("Reject connected: " + d.Str());
-////      } else if ( (ind = mHWMandatoryConnected.indexOf(d)) != -1 ) {
-////        mHWMandatoryConnected.removeAt(ind);
-////        WriteDebug("Reject prev manadatory: " + d.Str());
-////      } else {
-////        WriteDebug("Rejected without connection: " + d.Str());
-////      }
-////      mHWRejected << d;
-////    } else {
-////      WriteDebug("PASS " + d.Str() + " " + d.text);
-////    }
-
-//  } // for
-
-////  ConsiderLock();
-//}
-
 
 
 Core::Core(QObject *parent)

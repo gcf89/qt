@@ -66,14 +66,14 @@ void Test_parserTest::testInit2()
                  "if_subclass_id":"00","if_protocol_id":"00"}]}},"text":"USB устройство извлечено",
                  "timestamp":"2017-08-06T07:22:51"},{"id":1484192689468439,
                  "value":{"raw":{"device_descriptor":{"vendor_id":"2","product_id":"2""
-                 ,"dev_class_id":"03","dev_subclass_id":"00","dev_protocol_id":"00",
-                 "serial_number":"keyboard2"},"interfaces":[{"if_class_id":"00",
-                 "if_subclass_id":"00","if_protocol_id":"00"}]}},"text":"USB устройство присоединено",
+                 ,"dev_class_id":"03","dev_subclass_id":"00","dev_protocol_id":"01",
+                 "serial_number":"keyboard2"},"interfaces":[{"if_class_id":"03",
+                 "if_subclass_id":"01","if_protocol_id":"01"}]}},"text":"USB устройство присоединено",
                  "timestamp":"2017-08-06T07:22:51"},{"id":1484192689468439,
                  "value":{"raw":{"device_descriptor":{"vendor_id":"2","product_id":"2""
-                 ,"dev_class_id":"03","dev_subclass_id":"00","dev_protocol_id":"00",
-                 "serial_number":"audio2"},"interfaces":[{"if_class_id":"00",
-                 "if_subclass_id":"00","if_protocol_id":"00"}]}},"text":"USB устройство присоединено",
+                 ,"dev_class_id":"03","dev_subclass_id":"00","dev_protocol_id":"02",
+                 "serial_number":"audio2"},"interfaces":[{"if_class_id":"03",
+                 "if_subclass_id":"01","if_protocol_id":"02"}]}},"text":"USB устройство присоединено",
                  "timestamp":"2017-08-06T07:22:51"})";
 
   Core c;
@@ -82,7 +82,7 @@ void Test_parserTest::testInit2()
   QCOMPARE(c.mHWAccepted.size(), 0);
   QCOMPARE(c.mHWRejected.size(), 2);
   QCOMPARE(c.mHWConnected.size(), 0);
-  QCOMPARE(c.mHWMandatoryDisconnected.size(), 2);
+  QCOMPARE(c.mHWMandatoryDisconnected.size(), 0);
 }
 
 void Test_parserTest::testInit3()
