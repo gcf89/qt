@@ -33,8 +33,7 @@ class HW
 {
 public:
   static bool IsIgnored(const HW& d) {
-    // usb hub
-    return d.if_class_id == "09" && d.if_subclass_id == "00";
+    return HW::IsUsbHub(d);
   }
 
 public:
