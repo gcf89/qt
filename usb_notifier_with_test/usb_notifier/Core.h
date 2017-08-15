@@ -33,6 +33,7 @@ class HW
 {
 public:
   static bool IsIgnored(const HW& d) {
+    // usb hub
     return d.if_class_id == "09" && d.if_subclass_id == "00";
   }
 
@@ -52,7 +53,9 @@ public:
 
 public:
   QString Str() const {
-    return "Id: " + id
+    QString res = IsParseOk() ? "[OK]  " : "[BAD] ";
+    return res
+        + "Id: " + id
         + " Vendor: " + vendor_id
         + " Product: " + product_id
         + " Dev class: " + dev_class_id
@@ -67,23 +70,37 @@ public:
         ;
   }
 
+  bool IsParseOk() {
+    return !id.isEmpty()
+        && !vendor_id.isEmpty()
+        && !product_id.isEmpty()
+        && !dev_class_id.isEmpty()
+        && !dev_subclass_id.isEmpty()
+        && !dev_protocol_id.isEmpty()
+        && !if_class_id.isEmpty()
+        && !if_subclass_id.isEmpty()
+        && !if_protocol_id.isEmpty()
+        && !text.isEmpty()
+        && !timestamp.isEmpty();
+  }
+
   QString Msg() const {
     QString msg;
-    if (if_class_id == "03" && if_subclass_id == "01" && if_protocol_id == "01") {
+    if (IsKeyboard(*this)) {
       msg = "Устройство ввода (клавиатура) " + MsgSN();
-    } else if (if_class_id == "03" && if_subclass_id == "01" && if_protocol_id == "02") {
+    } else if (IsMouse(*this)) {
       msg = "Устройство ввода (мышь) " + MsgSN();
-    } else if (if_class_id == "08" && if_subclass_id == "06") {
+    } else if (IsMassStorage(*this)) {
       msg = "Накопитель " + MsgSN();
-    } else if (if_class_id == "09" && if_subclass_id == "00") {
+    } else if (IsUsbHub(*this)) {
       msg = "Устройство ввода (USB Hub) " + MsgSN();
     } else {
-      msg = "Устройство " + ClassId() + " " + MsgSN();
+      msg = "Устройство " + FirstNotZeroId() + " " + MsgSN();
     }
     return msg;
   }
 
-  QString ClassId() const {
+  QString FirstNotZeroId() const {
     if (dev_class_id == "00" || dev_class_id.isEmpty()) {
       if (dev_subclass_id == "00" || dev_subclass_id.isEmpty()) {
         if (if_class_id == "00" || if_class_id.isEmpty()) {
@@ -111,6 +128,27 @@ public:
     }
   }
 
+  static bool IsKeyboard(const HW& d) {
+    return d.if_class_id == "03"
+        && d.if_subclass_id == "01"
+        && d.if_protocol_id == "01";
+  }
+
+  static bool IsMouse(const HW& d) {
+    return d.if_class_id == "03"
+        && d.if_subclass_id == "01"
+        && d.if_protocol_id == "02";
+  }
+
+  static bool IsUsbHub(const HW& d) {
+    return d.if_class_id == "09"
+        && d.if_subclass_id == "00";
+  }
+
+  static bool IsMassStorage(const HW& d) {
+    return d.if_class_id == "08"
+        && d.if_subclass_id == "06";
+  }
 };
 
 inline bool operator==(const HW& d1, const HW& d2)
@@ -151,12 +189,14 @@ public:
   QIcon                       mIconRed;
 
   QSet<QString>               mIfClassIdIgnore;
-//  QList<HW>                   mHWMandatoryConnected;
+  QList<HW>                   mHWMandatoryConnected;
   QList<HW>                   mHWMandatoryDisconnected;
 //  QMultiMap<QString, HW>      mRegisteredHW;
   QList<HW>                   mHWAccepted;
   QList<HW>                   mHWRejected;
   QList<HW>                   mHWConnected;
+  bool                        mHasKeyboard;
+  bool                        mHasMouse;
 
 public:
   bool Init(QString path);

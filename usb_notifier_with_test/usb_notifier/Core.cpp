@@ -327,6 +327,7 @@ bool Core::Parse(QString data, qint64 filesize)
       } else {
         if ( (ind = mHWMandatoryDisconnected.indexOf(d)) != -1 ) {
           mHWMandatoryDisconnected.removeAt(ind);
+          mHWMandatoryConnected << d;
           WriteDebug("M restored: " + d.Str());
         } else {
           WriteDebug("M reject: " + d.Str());
@@ -348,12 +349,19 @@ bool Core::Parse(QString data, qint64 filesize)
           WriteDebug("??? !M remove (!connected): " + d.Str());
         }
       } else {
-        if ( (ind = mHWRejected.indexOf(d)) != -1) {
+        if ( (ind = mHWRejected.indexOf(d)) != -1 ) {
           mHWRejected.removeAt(ind);
           WriteDebug("M remove rejected: " + d.Str());
-        } else {
+        } else if ( (ind = mHWMandatoryConnected.indexOf(d)) != -1 ) {
+          mHWMandatoryConnected.removeAt(ind);
           mHWMandatoryDisconnected << d;
-          WriteDebug("M disconnected: " + d.Str());
+          if (HW::IsKeyboard(d)) {
+            WriteDebug("M keyboard disconnected: " + d.Str());
+          } else if (HW::IsMouse(d)) {
+            WriteDebug("M mouse disconnected: " + d.Str());
+          } else {
+            WriteDebug("M disconnected: " + d.Str());
+          }
         }
       }
     } else if (d.text == kDevAccepted) {
@@ -368,17 +376,32 @@ bool Core::Parse(QString data, qint64 filesize)
             WriteDebug("!M rejected became accepted without reconnection" + d.Str());
         } else {
           mHWAccepted << d;
-          WriteDebug("??? !M accept (!connected, !rejected): " + d.Str());
+          WriteDebug("ERR: !M accept (!connected, !rejected): " + d.Str());
         }
       } else {
-        // disable, cause hv cannot properly restrict devices
-//        if ( (ind = mHWRejected.indexOf(d)) != -1 ) {
-//          mHWRejected.removeAt(ind);
-//          WriteDebug("M (new) accepted: " + d.Str());
-//        } else {
-//          WriteDebug("??? M (new) missed connection stage (accept)" + d.Str());
-//        }
-        WriteDebug("M ignore 'accepted'");
+        if ( (ind = mHWRejected.indexOf(d)) != -1 ) {
+          if (HW::IsKeyboard(d)) {
+            if (mHasKeyboard) {
+              WriteDebug("Already has keyboard. Reject");
+            } else {
+              mHWRejected.removeAt(ind);
+              mHWMandatoryConnected << d;
+              mHasKeyboard = true;
+              WriteDebug("M keyboard accepted: " + d.Str());
+            }
+          } else if (HW::IsMouse(d)) {
+            if (mHasMouse) {
+              WriteDebug("Already has mouse. Reject");
+            } else {
+              mHWRejected.removeAt(ind);
+              mHWMandatoryConnected << d;
+              mHasMouse = true;
+              WriteDebug("M mouse accepted: " + d.Str());
+            }
+          }
+        } else {
+          WriteDebug("ERR: M accepted without connection stage" + d.Str());
+        }
       }
     } else if (d.text == kDevRejected) {
       if (!IsMandatory(d)) {
@@ -392,7 +415,7 @@ bool Core::Parse(QString data, qint64 filesize)
           WriteDebug("!M accepted became rejected without reconnection" + d.Str());
         } else {
           mHWRejected << d;
-          WriteDebug("??? !M reject (!connected): " + d.Str());
+          WriteDebug("ERR: !M reject (!connected): " + d.Str());
         }
       } else {
         if ( (ind = mHWRejected.indexOf(d)) != -1 ) {
@@ -402,7 +425,7 @@ bool Core::Parse(QString data, qint64 filesize)
           WriteDebug("M accepted became rejected: " + d.Str());
         } else {
           mHWRejected << d;
-          WriteDebug("??? M (new) missed connection stage (reject): " + d.Str());
+          WriteDebug("ERR: M rejected without connection stage" + d.Str());
         }
       }
     } else {
@@ -412,80 +435,6 @@ bool Core::Parse(QString data, qint64 filesize)
 
   ConsiderLock();
   return true;
-
-//  int ind = -1;
-
-//  for (auto it=lines.constBegin(); it!=lines.constEnd(); ++it) {
-//    HW d = GetHWFrom(*it);
-//    if (d.text == kDevConnected) {
-//      if (mIfClassIdIgnore.contains(d.if_class_id)) {
-//        mHWConnected << d;
-//        WriteDebug("Connected: " + d.Str());
-//      } else {
-//        mHWRejected << d;
-//        WriteDebug("Connected (auto reject): " + d.Str());
-//      }
-//    } else if (d.text == kDevDisconnected) {
-//      if (mIfClassIdIgnore.contains(d.if_class_id)) {
-//        WriteDebug("Not mandatory removed: " + d.Str());
-//        if ( (ind = mHWRejected.indexOf(d)) != -1) {
-//          mHWRejected.removeAt(ind);
-//          WriteDebug("Not mandatory rejected removed: " + d.Str());
-//        } else if ( (ind = mHWAccepted.indexOf(d)) != -1 ) {
-//          mHWAccepted.removeAt(ind);
-//          WriteDebug("Not mandatory accepted removed: " + d.Str());
-//        }
-//      } else {
-//        if ( (ind = mHWMandatoryConnected.indexOf(d)) != -1 ) {
-//          mHWMandatoryConnected.removeAt(ind);
-//          mHWMandatoryDisconnected << d;
-//          WriteDebug("Mandatory removed: " + d.Str());
-//        } else if ( (ind = mHWRejected.indexOf(d)) != -1 ) {
-//          mHWRejected.removeAt(ind);
-//          WriteDebug("Rejected removed: " + d.Str());
-//        } else if ( (ind = mHWAccepted.indexOf(d)) != -1 ) {
-//          // sane check
-//          mHWAccepted.removeAt(ind);
-//          WriteDebug("Accepted removed: " + d.Str());
-//        } else {
-//          mHWMandatoryDisconnected << d;
-//          WriteDebug("Mandatory (not in the list) removed: " + d.Str());
-//        }
-//      }
-//    } else if (d.text == kDevAccepted) {
-//      if ( (ind = mHWConnected.indexOf(d)) != -1 ) {
-//        mHWConnected.removeAt(ind);
-//        mHWAccepted << d;
-//        WriteDebug("Accepted: " + d.Str());
-//      } else if ( (ind = mHWRejected.indexOf(d)) != -1 ) {
-//        if (!mIfClassIdIgnore.contains(d.if_class_id)) { // maybe new accepted mandatory
-//          mHWRejected.removeAt(ind);
-//          mHWMandatoryConnected << d;
-//          WriteDebug("? new mandatory: " + d.Str());
-//        }
-//      } else {
-//        mHWAccepted << d;
-//        WriteDebug("Accepted (not prev connected): " + d.Str());
-//      }
-//    } else if (d.text == kDevRejected) {
-//      if ( (ind = mHWConnected.indexOf(d)) != -1 ) {
-//        mHWConnected.removeAt(ind);
-//        WriteDebug("Reject connected: " + d.Str());
-//      } else if ( (ind = mHWMandatoryConnected.indexOf(d)) != -1 ) {
-//        mHWMandatoryConnected.removeAt(ind);
-//        WriteDebug("Reject prev manadatory: " + d.Str());
-//      } else if ( (ind = mHWRejected.indexOf(d)) != -1 ) {
-//        mHWRejected.removeAt(ind);
-//      } else {
-//        WriteDebug("Rejected without connection: " + d.Str());
-//      }
-//      mHWRejected << d;
-//    } else {
-//      WriteDebug("PASS " + d.Str() + " " + d.text);
-//    }
-//  }
-
-
 }
 
 void Core::CreateTrayIcon()
@@ -1008,6 +957,8 @@ Core::Core(QObject *parent)
   , dpy(NULL)
 #endif
   , mIsLocked(false)
+  , mHasKeyboard(false)
+  , mHasMouse(false)
 {
   mIfClassIdIgnore.insert("08"); // mass storage device
   mIfClassIdIgnore.insert("07"); // printer
