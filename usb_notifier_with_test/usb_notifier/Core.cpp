@@ -384,7 +384,7 @@ bool Core::Parse(QString data, qint64 filesize)
         if ( (ind = mHWRejected.indexOf(d)) != -1 ) {
           if (HW::IsKeyboard(d)) {
             if (mHasKeyboard) {
-              WriteDebug("Already has keyboard. Reject");
+              WriteDebug("M already has keyboard. Reject");
             } else {
               mHWRejected.removeAt(ind);
               mHWMandatoryConnected << d;
@@ -393,7 +393,7 @@ bool Core::Parse(QString data, qint64 filesize)
             }
           } else if (HW::IsMouse(d)) {
             if (mHasMouse) {
-              WriteDebug("Already has mouse. Reject");
+              WriteDebug("M already has mouse. Reject");
             } else {
               mHWRejected.removeAt(ind);
               mHWMandatoryConnected << d;
@@ -401,8 +401,12 @@ bool Core::Parse(QString data, qint64 filesize)
               WriteDebug("M mouse accepted: " + d.Str());
             }
           }
+        } else if ( (ind = mHWMandatoryConnected.indexOf(d)) != -1 ) {
+          WriteDebug("M already has accepted mouse");
+        } else if ( (ind = mHWMandatoryDisconnected.indexOf(d)) != -1 ) {
+          WriteDebug("ERR: M accept disconnected");
         } else {
-          WriteDebug("ERR: M accepted without connection stage" + d.Str());
+          WriteDebug("ERR: M accept !connected, !rejected" + d.Str());
         }
       }
     } else if (d.text == kDevRejected) {
@@ -435,7 +439,7 @@ bool Core::Parse(QString data, qint64 filesize)
     }
   }
 
-//  ConsiderLock();
+  ConsiderLock();
   return true;
 }
 
@@ -587,8 +591,18 @@ void Core::UnlockSystem()
 
     SetTrayIconAsLocked(false);
 
-    QTimer::singleShot(kHideTimeout, mSplash, SLOT(hide()));
-    QTimer::singleShot(kHideTimeout, mInfo, SLOT(hide()));
+//    QTimer::singleShot(kHideTimeout, mSplash, SLOT(hide()));
+//    QTimer::singleShot(kHideTimeout, mInfo, SLOT(hide()));
+
+    QTimer::singleShot(kHideTimeout, this, SLOT(HideGui()));
+  }
+}
+
+void Core::HideGui()
+{
+  if (!mIsLocked) {
+    mSplash->hide();
+    mInfo->hide();
   }
 }
 

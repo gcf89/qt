@@ -208,6 +208,7 @@ public:
   void ConsiderLock();
 private slots:
   void UnlockSystem();
+  void HideGui();
 public:
   void LockSystem();
   void SetCADActionsEnabled(bool enabled);
