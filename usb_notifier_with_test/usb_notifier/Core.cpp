@@ -319,6 +319,11 @@ bool Core::Parse(QString data, qint64 filesize)
       continue;
     }
 
+    /* 1. можно получить несколько запрещающих сообщений для одной
+     * и той же флешки
+     * 2. для клавиатуры и мыши такого не наблюдается
+     */
+
 
     if (d.text == kDevConnected) {
       if (!IsMandatory(d)) {
@@ -333,9 +338,9 @@ bool Core::Parse(QString data, qint64 filesize)
           mHWMandatoryDisconnected.removeAt(ind);
           mHWMandatoryConnected << d;
           WriteDebug("M restored: " + d.Str());
-        } else if ( (ind = mHWRejected.indexOf(d)) != -1 ) {
+        } /*else if ( (ind = mHWRejected.indexOf(d)) != -1 ) {
           WriteDebug("M already rejected " + d.Str());
-        } else {
+        }*/ else {
           WriteDebug("M reject: " + d.Str());
           mHWRejected << d;
         }
@@ -410,7 +415,7 @@ bool Core::Parse(QString data, qint64 filesize)
             }
           }
         } else if ( (ind = mHWMandatoryConnected.indexOf(d)) != -1 ) {
-          WriteDebug("M already has accepted mouse");
+          WriteDebug("ERR: M has already been accepted");
         } else if ( (ind = mHWMandatoryDisconnected.indexOf(d)) != -1 ) {
           WriteDebug("ERR: M accept disconnected");
         } else {
