@@ -424,16 +424,16 @@ bool Core::Parse(QString data, qint64 filesize)
       }
     } else if (d.text == kDevRejected) {
       if (!IsMandatory(d)) {
-        if ( (ind = mHWConnected.indexOf(d)) != -1 ) {
-          mHWConnected.removeAt(ind);
-          mHWRejected << d;
-          WriteDebug("!M reject: " + d.Str());
+        if ( (ind = mHWRejected.indexOf(d)) != -1 ) {
+          WriteDebug("!M already rejected " + d.Str());
         } else if ( (ind = mHWAccepted.indexOf(d)) != -1 ) {
           mHWAccepted.removeAt(ind);
           mHWRejected << d;
           WriteDebug("!M accepted became rejected without reconnection" + d.Str());
-        } else if ( (ind = mHWRejected.indexOf(d)) != -1 ) {
-          WriteDebug("!M already rejected " + d.Str());
+        } else if ( (ind = mHWConnected.indexOf(d)) != -1 ) {
+          mHWConnected.removeAt(ind);
+          mHWRejected << d;
+          WriteDebug("!M reject: " + d.Str());
         } else {
           mHWRejected << d;
           WriteDebug("ERR: !M reject (!connected): " + d.Str());
