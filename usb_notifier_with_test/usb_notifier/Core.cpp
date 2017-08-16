@@ -425,6 +425,9 @@ bool Core::Parse(QString data, qint64 filesize)
     } else if (d.text == kDevRejected) {
       if (!IsMandatory(d)) {
         if ( (ind = mHWRejected.indexOf(d)) != -1 ) {
+          if ( (ind = mHWConnected.indexOf(d)) != -1 ) {
+            mHWConnected.removeAt(ind);
+          }
           WriteDebug("!M already rejected " + d.Str());
         } else if ( (ind = mHWAccepted.indexOf(d)) != -1 ) {
           mHWAccepted.removeAt(ind);
