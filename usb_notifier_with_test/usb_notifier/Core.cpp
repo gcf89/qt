@@ -322,13 +322,19 @@ bool Core::Parse(QString data, qint64 filesize)
 
     if (d.text == kDevConnected) {
       if (!IsMandatory(d)) {
-        mHWConnected << d;
-        WriteDebug("!M connected: " + d.Str());
+        if ( (ind = mHWConnected.indexOf(d)) != -1 ) {
+          WriteDebug("!M already connected - ignore" + d.Str());
+        } else {
+          mHWConnected << d;
+          WriteDebug("!M connected: " + d.Str());
+        }
       } else {
         if ( (ind = mHWMandatoryDisconnected.indexOf(d)) != -1 ) {
           mHWMandatoryDisconnected.removeAt(ind);
           mHWMandatoryConnected << d;
           WriteDebug("M restored: " + d.Str());
+        } else if ( (ind = mHWRejected.indexOf(d)) != -1 ) {
+          WriteDebug("M already rejected " + d.Str());
         } else {
           WriteDebug("M reject: " + d.Str());
           mHWRejected << d;
@@ -363,7 +369,7 @@ bool Core::Parse(QString data, qint64 filesize)
             WriteDebug("M disconnected: " + d.Str());
           }
         } else {
-          WriteDebug("ERR: M removed (!rejected, !connected)");
+          WriteDebug("ERR: M removed (!rejected, !connected) " + d.Str());
         }
       }
     } else if (d.text == kDevAccepted) {
@@ -373,9 +379,11 @@ bool Core::Parse(QString data, qint64 filesize)
           mHWAccepted << d;
           WriteDebug("!M accept: " + d.Str());
         } else if ( (ind = mHWRejected.indexOf(d)) != -1 ) {
-            mHWRejected.removeAt(ind);
-            mHWAccepted << d;
-            WriteDebug("!M rejected became accepted without reconnection" + d.Str());
+          mHWRejected.removeAt(ind);
+          mHWAccepted << d;
+          WriteDebug("!M rejected became accepted without reconnection" + d.Str());
+        } else if ( (ind = mHWAccepted.indexOf(d)) != -1 ) {
+          WriteDebug("!M already accepted " + d.Str());
         } else {
           mHWAccepted << d;
           WriteDebug("ERR: !M accept (!connected, !rejected): " + d.Str());
@@ -419,6 +427,8 @@ bool Core::Parse(QString data, qint64 filesize)
           mHWAccepted.removeAt(ind);
           mHWRejected << d;
           WriteDebug("!M accepted became rejected without reconnection" + d.Str());
+        } else if ( (ind = mHWRejected.indexOf(d)) != -1 ) {
+          WriteDebug("!M already rejected " + d.Str());
         } else {
           mHWRejected << d;
           WriteDebug("ERR: !M reject (!connected): " + d.Str());
