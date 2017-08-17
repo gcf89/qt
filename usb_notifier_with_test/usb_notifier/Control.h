@@ -8,9 +8,13 @@
 
 
 // FOR RELEASE
+#define ENABLE_ALL_LOCK
+
+#ifdef ENABLE_ALL_LOCK
 #define ENABLE_LOCK
 #define SPLASH_STAYS_ON_TOP
 #define DISABLE_CAD
+#endif
 
 // FOR DEBUG
 //#define SHOW_TRAY_CONTEXT_MENU
@@ -19,6 +23,7 @@
 //#define CONSOLE_DEBUG
 //#define GUI_DEBUG
 //#define WIN_HV_MOCK
+#define DUMP_PARSE_DATA
 
 // FEATURES
 #define SILENT_TRAY

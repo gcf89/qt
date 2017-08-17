@@ -21,7 +21,6 @@
 #endif
 
 #include "Core.h"
-#include "Control.h"
 
 
 #ifdef Q_OS_WIN32
@@ -291,13 +290,24 @@ void Core::RunWatcher()
   if (delay < 0) {
     delay = 0;
   }
+
+#ifndef WIN_HV_MOCK
   QTimer::singleShot(delay, this, SLOT(RunWatcher()));
+#endif
+
 #endif
 }
 
 bool Core::Parse(QString data, qint64 filesize)
 {
   Q_UNUSED(filesize)
+
+#ifdef DUMP_PARSE_DATA
+  if (mParseDataDumpFile.isOpen()) {
+    mParseDataDumpStream << data;
+    mParseDataDumpStream.flush();
+  }
+#endif
 
   QStringList lines;
 #ifdef Q_OS_UNIX
@@ -813,6 +823,15 @@ Core::Core(QObject *parent)
   , mHasKeyboard(false)
   , mHasMouse(false)
 {
+#ifdef DUMP_PARSE_DATA
+  mParseDataDumpFile.setFileName("./hvdat_dump");
+  if (!mParseDataDumpFile.open(QIODevice::Text | QIODevice::WriteOnly)) {
+    qDebug() << "ERR: cannot open file to dump parsed data";
+  } else {
+    mParseDataDumpStream.setDevice(&mParseDataDumpFile);
+  }
+#endif
+
   mIfClassIdIgnore.insert("08"); // mass storage device
   mIfClassIdIgnore.insert("07"); // printer
 

@@ -19,6 +19,7 @@
 
 #include "WidgetSplash.h"
 #include "DialogInfo.h"
+#include "Control.h"
 
 
 /*
@@ -177,9 +178,6 @@ public:
   QSystemTrayIcon*            trayIcon;
   QMenu*                      trayIconMenu;
   QString                     mSourcePath;
-//  QStringList                 mHWGood;
-//  QStringList                 mHWInstalledRemoved;
-//  QStringList                 mHWBad;
 #ifdef Q_OS_UNIX
   Display*                    dpy;
 #endif
@@ -196,6 +194,10 @@ public:
   QList<HW>                   mHWConnected;
   bool                        mHasKeyboard;
   bool                        mHasMouse;
+#ifdef DUMP_PARSE_DATA
+  QFile                       mParseDataDumpFile;
+  QTextStream                 mParseDataDumpStream;
+#endif
 
 public:
   bool Init(QString path);
