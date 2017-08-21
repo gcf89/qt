@@ -22,14 +22,6 @@
 #include "Control.h"
 
 
-/*
- * 1. read hvdat to get initial good hw
- * 2. if inserted and good add to tmp list (usb)
- * 3. if inserted and bad lock
- * 4. if removed good from tmp list (ok, notify)
- * 5. if removed good from initial list (lock)
- */
-
 class HW
 {
 public:
@@ -188,7 +180,6 @@ public:
   QSet<QString>               mIfClassIdIgnore;
   QList<HW>                   mHWMandatoryConnected;
   QList<HW>                   mHWMandatoryDisconnected;
-//  QMultiMap<QString, HW>      mRegisteredHW;
   QList<HW>                   mHWAccepted;
   QList<HW>                   mHWRejected;
   QList<HW>                   mHWConnected;
@@ -220,7 +211,6 @@ public:
 public: // private
   HW GetHWFrom(const QString& line);
   bool IsMandatory(const HW& d) const;
-//  void InitMandatoryHW(QString& data);
 
 private slots:
   void onTargetFileChanged();

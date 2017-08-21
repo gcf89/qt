@@ -27,10 +27,6 @@ int main(int argc, char *argv[])
     exit(-2);
   }
 
-//  QTextStream in(&f);
-//  in.setCodec(QTextCodec::codecForName("UTF8"));
-
-//  std::cout << in.readAll().toStdString();
 #ifdef Q_OS_WIN
   std::cout << f.readAll().toStdString();
 #endif

@@ -126,14 +126,7 @@ bool Core::Init(QString path)
 
   f.setFileName(mSourcePath);
   if (f.open(QIODevice::ReadOnly | QIODevice::Text)) {
-//    QTextStream in(&f);
-//    in.setCodec(QTextCodec::codecForName("UTF8"));
-//    QString data = in.readAll();
-//    InitMandatoryHW(data);
-//    mLastFileSize = f.size();
-
     WriteDebug("[" + QDateTime::currentDateTime().toString() + "]" + "Init done");
-
     RunWatcher();
   } else {
     WriteDebug("ERROR: cannot open file:" + mSourcePath);
@@ -188,10 +181,6 @@ bool Core::Init(QString path)
     WriteDebug("ERR:" + path + "does not exist");
     return false;
   }
-//  if (fi.isExecutable()) {
-//    WriteDebug("ERR:" + path + "cannot be executed");
-//    return false;
-//  }
 
   mSourcePath = path;
   WriteDebug("Hypervisor: "+mSourcePath);
@@ -208,18 +197,10 @@ bool Core::Init(QString path)
 void Core::RunWatcher()
 {
 #ifdef Q_OS_UNIX
-//  QFile f(mSourcePath);
-//  mLastFileSize = f.size();
-
-  // 1. on start read all file, parse and consider lock
-  // 2. react on specific messages (lock or unlock)
-  // 3. get real hardware and test
-
   mFileWatcher->addPath(mSourcePath);
   connect(mFileWatcher, SIGNAL(fileChanged(QString)),
           this, SLOT(onTargetFileChanged()));
 
-  // like on start init
   onTargetFileChanged();
 #endif
 
@@ -242,10 +223,7 @@ void Core::RunWatcher()
     WriteDebug("ERR:" + prog + "does not exist");
     return;
   }
-//  if (!fi.isExecutable()) {
-//    WriteDebug("ERR:" + prog + "cannot be executed");
-//    return;
-//  }
+
   fi.setFile(mock_data);
   if (!fi.exists()) {
     WriteDebug("ERR:" + mock_data + "does not exist");
@@ -275,10 +253,6 @@ void Core::RunWatcher()
   }
 
   if (!data.isEmpty()) {
-//    mHWMandatoryDisconnected.clear();
-//    mHWAccepted.clear();
-//    mHWRejected.clear();
-//    mHWConnected.clear();
     Parse(data, 0);
   } else {
     WriteDebug("No output from: "+p.program());
@@ -348,9 +322,7 @@ bool Core::Parse(QString data, qint64 filesize)
           mHWMandatoryDisconnected.removeAt(ind);
           mHWMandatoryConnected << d;
           WriteDebug("M restored: " + d.Str());
-        } /*else if ( (ind = mHWRejected.indexOf(d)) != -1 ) {
-          WriteDebug("M already rejected " + d.Str());
-        }*/ else {
+        } else {
           WriteDebug("M reject: " + d.Str());
           mHWRejected << d;
         }
@@ -491,10 +463,6 @@ void Core::CreateTrayIcon()
 
 void Core::ConsiderLock()
 {
-//  if (!mHWAccepted.isEmpty()) {
-//    trayIcon->setToolTip(mHWAccepted.last().Msg());
-//  }
-
   bool needLock = !mHWMandatoryDisconnected.isEmpty() || !mHWRejected.isEmpty();
 
   QString msg;
@@ -618,9 +586,6 @@ void Core::UnlockSystem()
 #endif
 
     SetTrayIconAsLocked(false);
-
-//    QTimer::singleShot(kHideTimeout, mSplash, SLOT(hide()));
-//    QTimer::singleShot(kHideTimeout, mInfo, SLOT(hide()));
 
     QTimer::singleShot(kHideTimeout, this, SLOT(HideGui()));
   }
@@ -805,7 +770,6 @@ HW Core::GetHWFrom(const QString &line)
 
 bool Core::IsMandatory(const HW &d) const
 {
-//  return d.dev_class_id != "00" || !mIfClassIdIgnore.contains(d.if_class_id);
   return HW::IsKeyboard(d) || HW::IsMouse(d);
 }
 
