@@ -4,9 +4,11 @@
 #
 #-------------------------------------------------
 
-QT       += core gui
+QT       += core gui serialport
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+
+QMAKE_CXXFLAGS += -std=c++11
 
 TARGET = pic_shower
 TEMPLATE = app
@@ -24,9 +26,11 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 
 SOURCES += main.cpp\
-        MainWindow.cpp
+        MainWindow.cpp \
+    SerialPort.cpp
 
 HEADERS  += MainWindow.h \
-    Common.h
+    Common.h \
+    SerialPort.h
 
 FORMS    += MainWindow.ui

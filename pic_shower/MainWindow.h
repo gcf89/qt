@@ -4,6 +4,9 @@
 #include <QSet>
 #include <QString>
 
+#include <QtSerialPort/QSerialPort>
+#include <QtSerialPort/QSerialPortInfo>
+
 #include "Common.h"
 
 DefineClassS(QFileSystemWatcher);
@@ -17,7 +20,10 @@ class MainWindow : public QMainWindow
   Ui::MainWindow                *ui;
   QFileSystemWatcherS            mDirWatcher;
   QSet<QString>                  mExistingFileNames;
+  // settings
+  QSerialPortInfo                mSerialPortInfo;
   QString                        mDirPath;
+  QString                        mPortName;
 
   Q_OBJECT
 

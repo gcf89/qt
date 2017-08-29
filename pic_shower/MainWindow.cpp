@@ -3,6 +3,7 @@
 #include <QDir>
 #include <QStringList>
 #include <QPixmap>
+#include <QList>
 
 #include "MainWindow.h"
 #include "ui_MainWindow.h"
@@ -26,7 +27,19 @@ MainWindow::~MainWindow()
 
 bool MainWindow::ReadSettings()
 {
+  /*
+   * ;view mode: extend or preserve pic size
+   * ;com port config
+   * ;source dir
+   * ;button size
+   * ;serial port name
+   */
+
   mDirPath = qApp->applicationDirPath()+"/pics";
+  mPortName = "abc";
+
+  mSerialPortInfo = QSerialPortInfo(mPortName);
+
   return true;
 }
 
@@ -38,6 +51,10 @@ bool MainWindow::CacheExistingFileNames()
 bool MainWindow::Init()
 {
   mDirWatcher->addPath(mDirPath);
+
+  QList<QSerialPortInfo> availablePorts = QSerialPortInfo::availablePorts();
+  if (availablePorts.contains())
+
   return true;
 }
 
