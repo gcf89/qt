@@ -8,6 +8,8 @@
 #include "MainWindow.h"
 #include "ui_MainWindow.h"
 
+// emulate com port on linux: https://stackoverflow.com/questions/52187/virtual-serial-port-for-linux
+
 MainWindow::MainWindow(QWidget *parent) :
   QMainWindow(parent),
   ui(new Ui::MainWindow)
