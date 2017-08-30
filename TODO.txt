@@ -13,3 +13,4 @@
 - save odt, pdf
 - screenshot
 - qt/c++ ftp
+- what Q_OBJECT macro do?
