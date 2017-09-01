@@ -1,3 +1,4 @@
+#include <QFile>
 #include <QFileSystemWatcher>
 #include <QDebug>
 #include <QDir>
@@ -8,7 +9,8 @@
 #include "MainWindow.h"
 #include "ui_MainWindow.h"
 
-// emulate com port on linux: https://stackoverflow.com/questions/52187/virtual-serial-port-for-linux
+// emulate com port on linux:
+// https://stackoverflow.com/questions/52187/virtual-serial-port-for-linux
 
 MainWindow::MainWindow(QWidget *parent) :
   QMainWindow(parent),
@@ -29,34 +31,40 @@ MainWindow::~MainWindow()
 
 bool MainWindow::ReadSettings()
 {
-  /*
-   * ;view mode: extend or preserve pic size
-   * ;com port config
-   * ;source dir
-   * ;button size
-   * ;serial port name
-   */
+  mSettings.ReadConfig();
+  return mSettings.IsValid();
+}
 
-  mDirPath = qApp->applicationDirPath()+"/pics";
-  mPortName = "abc";
+bool MainWindow::Init()
+{
+  mDirWatcher->addPath(mSettings.imageDir);
 
-  mSerialPortInfo = QSerialPortInfo(mPortName);
+  if (mSettings.showMaximized) {
+    showMaximized();
+  }
+
+  if ( (mSettings.buttonHeight != 0) && (mSettings.buttonWidth != 0) ) {
+    ui->pushButtonAccept->setMinimumSize(mSettings.buttonWidth,
+                                         mSettings.buttonHeight);
+    ui->pushButtonReject->setMinimumSize(mSettings.buttonWidth,
+                                         mSettings.buttonHeight);
+  }
+
+  QList<QSerialPortInfo> availablePorts = QSerialPortInfo::availablePorts();
+  qDebug() << ">>> Available ports:";
+  foreach (auto pi, availablePorts) {
+    qDebug() << pi.;
+  }
+
+  if (!availablePorts.contains(mSettings.portName)) {
+    return false;
+  }
 
   return true;
 }
 
 bool MainWindow::CacheExistingFileNames()
 {
-  return true;
-}
-
-bool MainWindow::Init()
-{
-  mDirWatcher->addPath(mDirPath);
-
-  QList<QSerialPortInfo> availablePorts = QSerialPortInfo::availablePorts();
-  if (availablePorts.contains())
-
   return true;
 }
 

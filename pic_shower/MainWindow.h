@@ -8,6 +8,7 @@
 #include <QtSerialPort/QSerialPortInfo>
 
 #include "Common.h"
+#include "Settings.h"
 
 DefineClassS(QFileSystemWatcher);
 
@@ -20,11 +21,7 @@ class MainWindow : public QMainWindow
   Ui::MainWindow                *ui;
   QFileSystemWatcherS            mDirWatcher;
   QSet<QString>                  mExistingFileNames;
-  // settings
-  QSerialPortInfo                mSerialPortInfo;
-  QString                        mDirPath;
-  QString                        mPortName;
-
+  Settings                       mSettings;
   Q_OBJECT
 
 public:
@@ -33,8 +30,8 @@ public:
 
 public:
   bool ReadSettings();
-  bool CacheExistingFileNames();
   bool Init();
+  bool CacheExistingFileNames();
 
 private slots:
   void on_pushButtonAccept_clicked();
