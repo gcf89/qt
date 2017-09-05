@@ -12,6 +12,9 @@ public:
   int       buttonWidth;
   int       buttonHeight;
   QString   portName;
+  int       baudRate;
+  QString   sendOnAccept;
+  QString   sendOnReject;
 
 public:
   Settings();

@@ -23,6 +23,9 @@ MainWindow::MainWindow(QWidget *parent) :
   mDirWatcher.reset(new QFileSystemWatcher());
   connect(mDirWatcher.data(), SIGNAL(directoryChanged(QString)),
           this, SLOT(OnDirChanged(QString)));
+
+  connect(&mSerialPort, SIGNAL(WriteFinished(bool,QString)),
+          this, SLOT(OnSerialPortWriteFinished(bool,QString)));
 }
 
 MainWindow::~MainWindow()
@@ -77,11 +80,36 @@ bool MainWindow::Init()
 
   if (it != availablePorts.constEnd()) {
     qInfo() << "Port found:" << mSettings.portName;
-    return true;
   } else {
     qCritical() << "Port NOT found:" << mSettings.portName;
     return false;
   }
+
+  QSet<int> acceptableBaudRates;
+  acceptableBaudRates.insert(1200);
+  acceptableBaudRates.insert(2400);
+  acceptableBaudRates.insert(4800);
+  acceptableBaudRates.insert(9600);
+  acceptableBaudRates.insert(19200);
+  acceptableBaudRates.insert(38400);
+  acceptableBaudRates.insert(57600);
+  acceptableBaudRates.insert(115200);
+
+  if (acceptableBaudRates.contains(mSettings.baudRate)) {
+    qInfo() << "Baud rate:" << mSettings.baudRate;
+  } else {
+    qWarning() << "Bad baud rate:" << mSettings.baudRate << "Use default: 9600";
+    mSettings.baudRate = 9600;
+  }
+
+  if (mSerialPort.Init(mSettings)) {
+    qInfo() << "Serial port initalized";
+  } else {
+    qCritical() << mSerialPort.ErrorString();
+    return false;
+  }
+
+  return true;
 }
 
 bool MainWindow::CacheExistingFileNames()
@@ -91,12 +119,12 @@ bool MainWindow::CacheExistingFileNames()
 
 void MainWindow::on_pushButtonAccept_clicked()
 {
-  //
+  mSerialPort.Write(mSettings.sendOnAccept.toLatin1());
 }
 
 void MainWindow::on_pushButtonReject_clicked()
 {
-  //
+  mSerialPort.Write(mSettings.sendOnReject.toLatin1());
 }
 
 void MainWindow::OnDirChanged(QString path)
@@ -124,5 +152,14 @@ void MainWindow::OnDirChanged(QString path)
     } else {
       qCritical() << "cannot load picture";
     }
+  }
+}
+
+void MainWindow::OnSerialPortWriteFinished(bool ok, QString msg)
+{
+  if (ok) {
+    qInfo() << "Write successfull";
+  } else {
+    qCritical() << "Serial port error:" << msg;
   }
 }

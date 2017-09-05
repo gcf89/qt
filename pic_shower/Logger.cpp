@@ -8,7 +8,7 @@
 #include "Logger.h"
 
 
-const QString kFormat = "[yyyy/M/d h:m:ss.zzz]";
+const QString kFormat = "[yyyy/MM/dd hh:mm:ss.zzz]";
 
 
 QFile Logger::mLogFile;

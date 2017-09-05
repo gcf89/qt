@@ -1,68 +1,39 @@
-//#ifndef SERIALPORT_H
-//#define SERIALPORT_H
+#pragma once
+
+#include <QtSerialPort/QSerialPort>
+
+#include <QTextStream>
+#include <QTimer>
+#include <QByteArray>
+#include <QObject>
+
+#include "Settings.h"
+
+QT_USE_NAMESPACE
 
 
-//class SerialPort
-//{
-//public:
-//  SerialPort();
-//};
+class SerialPort : public QObject
+{
+  QSerialPort     mSerialPort;
+  QByteArray      mWriteData;
+  qint64          mBytesWritten;
+  QTimer          mTimer;
 
-//#endif // SERIALPORT_H
+  Q_OBJECT
 
+public:
+  explicit SerialPort(QObject *parent = nullptr);
+  ~SerialPort();
 
+  bool Init(const Settings& settings);
+  QString ErrorString() const;
+  void Write(const QByteArray &writeData);
 
-//#include <QThread>
-//#include <QMutex>
-//#include <QDebug>
+private slots:
+  void HandleBytesWritten(qint64 bytes);
+  void HandleTimeout();
+  void HandleError(QSerialPort::SerialPortError error);
 
-//#include <windows.h>
-
-//class WorkComPort : public QThread
-//{
-//    Q_OBJECT
-//public:
-//    WorkComPort();
-//    ~WorkComPort();
-
-//    void setStringPort(QString port);
-//    QString getStringMessage() const;
-
-//    bool openComPort();
-//    bool configComPort();
-//    bool isBusyComPort() const;
-//    void closeComPort();
-//    void setComPortSettings(DWORD baud, BYTE stopBits, BYTE byteSize, BYTE parity, DWORD dtr, DWORD rts);
-
-//    void writeToComPort(unsigned char code);
-//    void writeToComPort(QString &string);
-
-//signals:
-//    void send_data(QByteArray arr);
-
-//private:
-//    HANDLE          m_hComPort;
-//    DCB             dcb;
-//    COMMTIMEOUTS    comTimeOuts;
-//    COMSTAT         comStat;
-
-//    QString         m_stringComPort;
-//    QString         m_stringMessage;
-
-//    QMutex          m_mutex;
-
-//    DWORD           m_baudrate;
-//    BYTE            m_stopbits;
-//    BYTE            m_bytesize;
-//    BYTE            m_parity;
-//    DWORD           m_dtr;
-//    DWORD           m_rts;
-
-//    DWORD getReceiveBytes();
-//    DWORD readFromComPort(BYTE *inBuff, DWORD nInBytes);
-
-//    void arrayFromComPort(const unsigned char* buf, const int size);
-
-//protected:
-//    void run();
-//};
+signals:
+  void WriteFinished(bool ok, QString msg = "");
+};

@@ -12,6 +12,9 @@ const QString kImageDir =               "image_dir";
 const QString kButtonW =                "button_width";
 const QString kButtonH =                "button_height";
 const QString kSerialPortName =         "serial_port_name";
+const QString kSerialPortBaudRate =     "baud_rate";
+const QString kSendOnAccept =           "send_on_accept";
+const QString kSendOnReject =           "send_on_reject";
 
 
 Settings::Settings()
@@ -19,6 +22,7 @@ Settings::Settings()
   , imageShowFullSize(true)
   , buttonWidth(0)
   , buttonHeight(0)
+  , baudRate(9600)
 {
 }
 
@@ -50,6 +54,12 @@ void Settings::ReadConfig()
         buttonHeight = value.toInt();
       } else if (key == kSerialPortName) {
         portName = value;
+      } else if (key == kSerialPortName) {
+        baudRate = value.toInt();
+      } else if (key == kSendOnAccept) {
+        sendOnAccept = value;
+      } else if (key == kSendOnReject) {
+        sendOnReject = value;
       }
     }
   } else {

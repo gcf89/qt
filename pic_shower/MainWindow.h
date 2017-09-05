@@ -9,6 +9,7 @@
 
 #include "Common.h"
 #include "Settings.h"
+#include "SerialPort.h"
 
 DefineClassS(QFileSystemWatcher);
 
@@ -22,6 +23,8 @@ class MainWindow : public QMainWindow
   QFileSystemWatcherS            mDirWatcher;
   QSet<QString>                  mExistingFileNames;
   Settings                       mSettings;
+  SerialPort                     mSerialPort;
+
   Q_OBJECT
 
 public:
@@ -37,4 +40,5 @@ private slots:
   void on_pushButtonAccept_clicked();
   void on_pushButtonReject_clicked();
   void OnDirChanged(QString path);
+  void OnSerialPortWriteFinished(bool ok, QString msg);
 };
