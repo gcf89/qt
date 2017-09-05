@@ -1,9 +1,18 @@
+#include <iostream>
+
 #include <QObject>
 #include <QFile>
 #include <QDateTime>
 #include <QDebug>
 
 #include "Logger.h"
+
+
+const QString kFormat = "[yyyy/M/d h:m:ss.zzz]";
+
+
+QFile Logger::mLogFile;
+QTextStream Logger::mOutStream;
 
 
 Logger::~Logger()
@@ -18,9 +27,16 @@ bool Logger::Init(const QString& logPath)
   mLogFile.setFileName(logPath);
   bool res = mLogFile.open(QIODevice::Append | QIODevice::Text);
   if (res) {
-    qDebug() << "OK: Logger initialization";
+    mOutStream.setDevice(&mLogFile);
+    mOutStream << QDateTime::currentDateTime().toString(kFormat)
+               << " Info : Logger initialization OK\n";
+    std::cout << QDateTime::currentDateTime().toString(kFormat).toStdString()
+              << " Info : Logger initialization OK"
+              << std::endl;
   } else {
-    qDebug() << "ERR: Logger initialization";
+    std::cout << QDateTime::currentDateTime().toString(kFormat).toStdString()
+              << " Error: Logger initialization FAILED"
+              << std::endl;
   }
 
   return res;
@@ -28,48 +44,32 @@ bool Logger::Init(const QString& logPath)
 
 void Logger::MsgHandler(QtMsgType type, const QMessageLogContext &logContext, const QString &msg)
 {
-  QTextStream out(&logFile);
-  QDebug dbg;
+  Q_UNUSED(logContext)
+
+  QDebug dbg(type);
+
   switch (type){
+  case QtInfoMsg:
+    mOutStream << QDateTime::currentDateTime().toString(kFormat) <<" Info : " << msg <<  "\n";
+    dbg << QDateTime::currentDateTime().toString(kFormat) << "Info :" << msg;
+    break;
   case QtDebugMsg:
-    out << QDateTime::currentDateTime().toString() <<" Debug: " << msg <<  "\n";
-    dbg. << QDateTime::currentDateTime().toString() <<" Debug: " << msg <<  "\n";
+#ifndef QT_NO_DEBUG
+    mOutStream << QDateTime::currentDateTime().toString(kFormat) <<" Debug: " << msg <<  "\n";
+    dbg << QDateTime::currentDateTime().toString(kFormat) << "Debug:" << msg;
+#endif
     break;
   case QtWarningMsg:
-    out << QDateTime::currentDateTime().toString() <<" Warning: " << msg <<  "\n";
-    dbg << QDateTime::currentDateTime().toString() <<" Warning: " << msg <<  "\n";
+    mOutStream << QDateTime::currentDateTime().toString(kFormat) <<" Warn : " << msg <<  "\n";
+    dbg << QDateTime::currentDateTime().toString(kFormat) << "Warn :" << msg;
     break;
   case QtCriticalMsg:
-    out << QDateTime::currentDateTime().toString() <<" Critical: " << msg <<  "\n";
-    dbg << QDateTime::currentDateTime().toString() <<" Critical: " << msg <<  "\n";
+    mOutStream << QDateTime::currentDateTime().toString(kFormat) <<" Error: " << msg <<  "\n";
+    dbg << QDateTime::currentDateTime().toString(kFormat) << "Error:" << msg;
     break;
   case QtFatalMsg:
-    out << QDateTime::currentDateTime().toString() <<" Fatal: " << msg <<  "\n";
-    dbg << QDateTime::currentDateTime().toString() <<" Fatal: " << msg <<  "\n";
+    mOutStream << QDateTime::currentDateTime().toString(kFormat) <<" Fatal: " << msg <<  "\n";
+    dbg << QDateTime::currentDateTime().toString(kFormat) << "Fatal:" << msg;
     break;
   }
 }
-
-//void Logger::MsgHandler(QtMsgType type, const char *msg)
-//{
-//  QTextStream out(&logFile);
-//  QDebug dbg;
-//  switch (type){
-//  case QtDebugMsg:
-//    out << QDateTime::currentDateTime().toString() <<" Debug: " << msg <<  "\n";
-//    dbg. << QDateTime::currentDateTime().toString() <<" Debug: " << msg <<  "\n";
-//    break;
-//  case QtWarningMsg:
-//    out << QDateTime::currentDateTime().toString() <<" Warning: " << msg <<  "\n";
-//    dbg << QDateTime::currentDateTime().toString() <<" Warning: " << msg <<  "\n";
-//    break;
-//  case QtCriticalMsg:
-//    out << QDateTime::currentDateTime().toString() <<" Critical: " << msg <<  "\n";
-//    dbg << QDateTime::currentDateTime().toString() <<" Critical: " << msg <<  "\n";
-//    break;
-//  case QtFatalMsg:
-//    out << QDateTime::currentDateTime().toString() <<" Fatal: " << msg <<  "\n";
-//    dbg << QDateTime::currentDateTime().toString() <<" Fatal: " << msg <<  "\n";
-//    break;
-//  }
-//}

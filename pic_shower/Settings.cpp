@@ -53,7 +53,7 @@ void Settings::ReadConfig()
       }
     }
   } else {
-    qDebug() << "ERR: cannot read" << configPath;
+    qCritical() << "cannot read settings:" << configPath;
   }
 }
 

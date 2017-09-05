@@ -1,68 +1,68 @@
-#ifndef SERIALPORT_H
-#define SERIALPORT_H
+//#ifndef SERIALPORT_H
+//#define SERIALPORT_H
 
 
-class SerialPort
-{
-public:
-  SerialPort();
-};
+//class SerialPort
+//{
+//public:
+//  SerialPort();
+//};
 
-#endif // SERIALPORT_H
+//#endif // SERIALPORT_H
 
 
 
-#include <QThread>
-#include <QMutex>
-#include <QDebug>
+//#include <QThread>
+//#include <QMutex>
+//#include <QDebug>
 
-#include <windows.h>
+//#include <windows.h>
 
-class WorkComPort : public QThread
-{
-    Q_OBJECT
-public:
-    WorkComPort();
-    ~WorkComPort();
+//class WorkComPort : public QThread
+//{
+//    Q_OBJECT
+//public:
+//    WorkComPort();
+//    ~WorkComPort();
 
-    void setStringPort(QString port);
-    QString getStringMessage() const;
+//    void setStringPort(QString port);
+//    QString getStringMessage() const;
 
-    bool openComPort();
-    bool configComPort();
-    bool isBusyComPort() const;
-    void closeComPort();
-    void setComPortSettings(DWORD baud, BYTE stopBits, BYTE byteSize, BYTE parity, DWORD dtr, DWORD rts);
+//    bool openComPort();
+//    bool configComPort();
+//    bool isBusyComPort() const;
+//    void closeComPort();
+//    void setComPortSettings(DWORD baud, BYTE stopBits, BYTE byteSize, BYTE parity, DWORD dtr, DWORD rts);
 
-    void writeToComPort(unsigned char code);
-    void writeToComPort(QString &string);
+//    void writeToComPort(unsigned char code);
+//    void writeToComPort(QString &string);
 
-signals:
-    void send_data(QByteArray arr);
+//signals:
+//    void send_data(QByteArray arr);
 
-private:
-    HANDLE          m_hComPort;
-    DCB             dcb;
-    COMMTIMEOUTS    comTimeOuts;
-    COMSTAT         comStat;
+//private:
+//    HANDLE          m_hComPort;
+//    DCB             dcb;
+//    COMMTIMEOUTS    comTimeOuts;
+//    COMSTAT         comStat;
 
-    QString         m_stringComPort;
-    QString         m_stringMessage;
+//    QString         m_stringComPort;
+//    QString         m_stringMessage;
 
-    QMutex          m_mutex;
+//    QMutex          m_mutex;
 
-    DWORD           m_baudrate;
-    BYTE            m_stopbits;
-    BYTE            m_bytesize;
-    BYTE            m_parity;
-    DWORD           m_dtr;
-    DWORD           m_rts;
+//    DWORD           m_baudrate;
+//    BYTE            m_stopbits;
+//    BYTE            m_bytesize;
+//    BYTE            m_parity;
+//    DWORD           m_dtr;
+//    DWORD           m_rts;
 
-    DWORD getReceiveBytes();
-    DWORD readFromComPort(BYTE *inBuff, DWORD nInBytes);
+//    DWORD getReceiveBytes();
+//    DWORD readFromComPort(BYTE *inBuff, DWORD nInBytes);
 
-    void arrayFromComPort(const unsigned char* buf, const int size);
+//    void arrayFromComPort(const unsigned char* buf, const int size);
 
-protected:
-    void run();
-};
+//protected:
+//    void run();
+//};

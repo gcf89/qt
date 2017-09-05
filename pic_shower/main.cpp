@@ -12,6 +12,7 @@ int main(int argc, char *argv[])
   if (Logger::Init("log.txt")) {
     qInstallMessageHandler(Logger::MsgHandler);
   }
+  qInfo() << "-= Session started =-";
 
   MainWindow w;
   int ret = 0;
@@ -19,8 +20,8 @@ int main(int argc, char *argv[])
     w.show();
     ret = a.exec();
   } else {
-    qDebug() << "ERR: cannot init properly";
     ret = -1;
+    qCritical() << "cannot init (" << ret << ")";
   }
 
   return ret;

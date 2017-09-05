@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include <QFile>
 #include <QFileSystemWatcher>
 #include <QDebug>
@@ -17,7 +19,6 @@ MainWindow::MainWindow(QWidget *parent) :
   ui(new Ui::MainWindow)
 {
   ui->setupUi(this);
-//  showMaximized();
 
   mDirWatcher.reset(new QFileSystemWatcher());
   connect(mDirWatcher.data(), SIGNAL(directoryChanged(QString)),
@@ -38,28 +39,42 @@ bool MainWindow::ReadSettings()
 bool MainWindow::Init()
 {
   mDirWatcher->addPath(mSettings.imageDir);
+  qDebug() << "Image dir:" << mSettings.imageDir;
 
   if (mSettings.showMaximized) {
     showMaximized();
   }
+  qDebug() << "Show maximized:" << mSettings.showMaximized;
 
   if ( (mSettings.buttonHeight != 0) && (mSettings.buttonWidth != 0) ) {
     ui->pushButtonAccept->setMinimumSize(mSettings.buttonWidth,
                                          mSettings.buttonHeight);
     ui->pushButtonReject->setMinimumSize(mSettings.buttonWidth,
                                          mSettings.buttonHeight);
+    qDebug() << "Button width:" << mSettings.buttonWidth
+             << "Button height:" << mSettings.buttonHeight;
+  } else {
+    qDebug() << "Button size: default";
   }
 
   QList<QSerialPortInfo> availablePorts = QSerialPortInfo::availablePorts();
-  qDebug() << ">>> Available ports:";
+  qDebug() << "Available ports:";
   foreach (auto pi, availablePorts) {
-    qDebug() << pi.;
+    qDebug() << pi.portName();
   }
 
-  if (!availablePorts.contains(mSettings.portName)) {
-    return false;
-  }
+  std::find_if(availablePorts.constBegin(), availablePorts.constEnd(),
+  [&](const QSerialPortInfo& pi) -> bool {
+//    if (mSettings.portName == pi.portName()) {
+      return mSettings.portName == pi.portName();
+//    }
+  });
 
+//  if (!availablePorts.contains(mSettings.portName)) {
+//    qCritical() << "Cannot find port specified:" << mSettings.portName;
+//    return false;
+//  }
+  qWarning() << "OK: port found!";
   return true;
 }
 
@@ -84,7 +99,7 @@ void MainWindow::OnDirChanged(QString path)
 
   qDebug() << "D: dir changed";
 
-  QDir d(mDirPath);
+  QDir d(mSettings.imageDir);
   QStringList fileNames = d.entryList(QStringList() << "*.png" << "*.jpg" << "*.jpeg");
 
   for (auto it=fileNames.constBegin(); it!=fileNames.constEnd(); ++it) {
