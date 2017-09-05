@@ -38,44 +38,50 @@ bool MainWindow::ReadSettings()
 
 bool MainWindow::Init()
 {
+  qInfo() << "Image dir:" << mSettings.imageDir;
+  if (mSettings.imageDir.startsWith("./")) {
+    mSettings.imageDir = qApp->applicationDirPath()+QDir::separator()+mSettings.imageDir.mid(2);
+  }
   mDirWatcher->addPath(mSettings.imageDir);
-  qDebug() << "Image dir:" << mSettings.imageDir;
 
+  qInfo() << "Show maximized:" << mSettings.showMaximized;
   if (mSettings.showMaximized) {
+    setWindowFlags(Qt::FramelessWindowHint);
     showMaximized();
   }
-  qDebug() << "Show maximized:" << mSettings.showMaximized;
+
+  qInfo() << "Show pic fullsize:" << mSettings.imageShowFullSize;
+  ui->labelPicture->setScaledContents(mSettings.imageShowFullSize);
 
   if ( (mSettings.buttonHeight != 0) && (mSettings.buttonWidth != 0) ) {
     ui->pushButtonAccept->setMinimumSize(mSettings.buttonWidth,
                                          mSettings.buttonHeight);
     ui->pushButtonReject->setMinimumSize(mSettings.buttonWidth,
                                          mSettings.buttonHeight);
-    qDebug() << "Button width:" << mSettings.buttonWidth
+    qInfo() << "Button width:" << mSettings.buttonWidth
              << "Button height:" << mSettings.buttonHeight;
   } else {
-    qDebug() << "Button size: default";
+    qInfo() << "Button size: default";
   }
 
+  qInfo() << "Available ports:";
   QList<QSerialPortInfo> availablePorts = QSerialPortInfo::availablePorts();
-  qDebug() << "Available ports:";
   foreach (auto pi, availablePorts) {
-    qDebug() << pi.portName();
+    qInfo() << pi.portName();
   }
 
-  std::find_if(availablePorts.constBegin(), availablePorts.constEnd(),
-  [&](const QSerialPortInfo& pi) -> bool {
-//    if (mSettings.portName == pi.portName()) {
-      return mSettings.portName == pi.portName();
-//    }
+  auto it = std::find_if(availablePorts.constBegin(), availablePorts.constEnd(),
+                         [&](const QSerialPortInfo& pi) -> bool {
+    return mSettings.portName == pi.portName();
   });
 
-//  if (!availablePorts.contains(mSettings.portName)) {
-//    qCritical() << "Cannot find port specified:" << mSettings.portName;
-//    return false;
-//  }
-  qWarning() << "OK: port found!";
-  return true;
+  if (it != availablePorts.constEnd()) {
+    qInfo() << "Port found:" << mSettings.portName;
+    return true;
+  } else {
+    qCritical() << "Port NOT found:" << mSettings.portName;
+    return false;
+  }
 }
 
 bool MainWindow::CacheExistingFileNames()
@@ -97,25 +103,26 @@ void MainWindow::OnDirChanged(QString path)
 {
   Q_UNUSED(path)
 
-  qDebug() << "D: dir changed";
+  qDebug() << "Dir changed:" << path;
 
   QDir d(mSettings.imageDir);
   QStringList fileNames = d.entryList(QStringList() << "*.png" << "*.jpg" << "*.jpeg");
 
+  qDebug() << "Pics in dir:";
   for (auto it=fileNames.constBegin(); it!=fileNames.constEnd(); ++it) {
-    qDebug() << *it;
+    qDebug() << "Pic:" << *it;
   }
 
   if (!fileNames.isEmpty()) {
-    QString picPath = qApp->applicationDirPath()+"/pics/"+fileNames.last();
-//    QString picPath = fileNames.last();
-    qDebug() << picPath;
+    QString picPath = mSettings.imageDir+QDir::separator()+fileNames.last();
+    qDebug() << "Show pic:" << picPath;
 
     QPixmap p;
     if (p.load(picPath)) {
       ui->labelPicture->setPixmap(p);
+
     } else {
-      qDebug() << "ERR: cannot load picture";
+      qCritical() << "cannot load picture";
     }
   }
 }

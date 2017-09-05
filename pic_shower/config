@@ -1,0 +1,6 @@
+show_maximized = 0
+image_show_fullsize = 1
+image_dir = ./img
+button_width = 0
+button_height = 0
+serial_port_name = spname

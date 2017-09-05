@@ -72,4 +72,5 @@ void Logger::MsgHandler(QtMsgType type, const QMessageLogContext &logContext, co
     dbg << QDateTime::currentDateTime().toString(kFormat) << "Fatal:" << msg;
     break;
   }
+  mOutStream.flush();
 }

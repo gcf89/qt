@@ -29,12 +29,12 @@ void Settings::ReadConfig()
   if (f.open(QIODevice::ReadOnly | QIODevice::Text)) {
     QTextStream in(&f);
     QString line, key, value;
-    while (in.atEnd()) {
+    while (!in.atEnd()) {
       line = in.readLine();
       if (line.startsWith("#")) {
         continue;
       }
-      key = line.section(kDelimiter,0,0);
+      key = line.section(kDelimiter,0,0).trimmed();
       value = line.section(kDelimiter,1);
       value = value.mid(0, value.indexOf("#")).trimmed();
 
