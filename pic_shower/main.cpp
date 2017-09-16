@@ -9,7 +9,13 @@ int main(int argc, char *argv[])
 {
   QApplication a(argc, argv);
 
-  if (Logger::Init("log.txt")) {
+  QString logPath;
+#ifdef QT_DEBUG
+  logPath = "log.txt";
+#else
+  logPath = "/var/log/imganalizer/log.txt";
+#endif
+  if (Logger::Init(logPath)) {
     qInstallMessageHandler(Logger::MsgHandler);
   }
   qInfo() << "-= Session opened =-";

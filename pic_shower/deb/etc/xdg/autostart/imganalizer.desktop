@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Image analizer
+Exec=imganalizer
+Terminal=false
+Type=Application
+Icon=imganalizer
+NotShowIn=KDE;LXDE;Unity;GNOME;
+StartupNotify=false
+X-GNOME-Autostart-Delay=3
+Categories=Misc

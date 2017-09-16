@@ -28,7 +28,12 @@ Settings::Settings()
 
 void Settings::ReadConfig()
 {
-  QString configPath = QApplication::applicationDirPath()+QDir::separator()+"config";
+  QString configPath;
+#ifdef QT_DEBUG
+  configPath = QApplication::applicationDirPath()+QDir::separator()+"config";
+#else
+  configPath = "/etc/imganalizer/config";
+#endif
   QFile f(configPath);
   if (f.open(QIODevice::ReadOnly | QIODevice::Text)) {
     QTextStream in(&f);

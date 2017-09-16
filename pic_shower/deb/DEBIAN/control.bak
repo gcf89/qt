@@ -1,0 +1,10 @@
+Package: imganalizer
+Version: __progver__-__debver__
+Provides: imganalizer
+Maintainer: Dart Vaider <dart.vaider@deathstar.com>
+Architecture: amd64
+Section: misc
+Description: Image analizer
+ Image analizer with com-port communication
+Depends: libc (2.23), 
+Priority: optional

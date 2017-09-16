@@ -1,0 +1,6 @@
+%%%% HASHDEEP-1.0
+%%%% size,md5,filename
+## Invoked from: /mnt/sdb3/data/documents/devel/plibs/pic_shower/deb
+## $ hashdeep -c md5 -r usr/bin
+## 
+69104,381308ae396d74e445006bca8d08b36b,/mnt/sdb3/data/documents/devel/plibs/pic_shower/deb/usr/bin/imganalizer
