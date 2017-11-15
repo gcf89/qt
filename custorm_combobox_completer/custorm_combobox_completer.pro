@@ -27,16 +27,21 @@ SOURCES += main.cpp\
         MainWindow.cpp \
     FormCustomSearch.cpp \
     CustomSearchDelegate.cpp \
-    FormCustomSearch2.cpp
+    FormCustomSearch2.cpp \
+    FormCustomSearchResult.cpp \
+    ClickableQLabel.cpp
 
 HEADERS  += MainWindow.h \
     FormCustomSearch.h \
     CustomSearchDelegate.h \
-    FormCustomSearch2.h
+    FormCustomSearch2.h \
+    FormCustomSearchResult.h \
+    ClickableQLabel.h
 
 FORMS    += MainWindow.ui \
     FormCustomSearch.ui \
-    FormCustomSearch2.ui
+    FormCustomSearch2.ui \
+    FormCustomSearchResult.ui
 
 OTHER_FILES += word_rus.txt
 

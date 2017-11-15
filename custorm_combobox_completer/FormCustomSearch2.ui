@@ -6,14 +6,17 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>336</width>
-    <height>84</height>
+    <width>295</width>
+    <height>81</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
   <layout class="QVBoxLayout" name="layoutMain" stretch="0,1">
+   <property name="spacing">
+    <number>1</number>
+   </property>
    <property name="leftMargin">
     <number>0</number>
    </property>
@@ -32,40 +35,28 @@
       <number>0</number>
      </property>
      <item>
-      <widget class="QTextEdit" name="textEdit">
+      <widget class="QLineEdit" name="lineEdit">
        <property name="minimumSize">
         <size>
          <width>0</width>
-         <height>32</height>
+         <height>48</height>
         </size>
        </property>
        <property name="maximumSize">
         <size>
          <width>16777215</width>
-         <height>32</height>
+         <height>48</height>
         </size>
        </property>
        <property name="font">
         <font>
          <family>Tahoma</family>
          <pointsize>12</pointsize>
-         <weight>50</weight>
-         <bold>false</bold>
-         <stylestrategy>PreferAntialias</stylestrategy>
-         <kerning>true</kerning>
+         <stylestrategy>PreferDefault</stylestrategy>
         </font>
        </property>
-       <property name="frameShape">
-        <enum>QFrame::NoFrame</enum>
-       </property>
-       <property name="frameShadow">
-        <enum>QFrame::Plain</enum>
-       </property>
-       <property name="verticalScrollBarPolicy">
-        <enum>Qt::ScrollBarAlwaysOff</enum>
-       </property>
-       <property name="horizontalScrollBarPolicy">
-        <enum>Qt::ScrollBarAlwaysOff</enum>
+       <property name="frame">
+        <bool>false</bool>
        </property>
       </widget>
      </item>
@@ -73,14 +64,14 @@
       <widget class="QToolButton" name="toolButtonSearch">
        <property name="minimumSize">
         <size>
-         <width>0</width>
-         <height>32</height>
+         <width>48</width>
+         <height>48</height>
         </size>
        </property>
        <property name="maximumSize">
         <size>
          <width>16777215</width>
-         <height>32</height>
+         <height>48</height>
         </size>
        </property>
        <property name="styleSheet">
@@ -106,6 +97,12 @@
      </item>
      <item>
       <widget class="QLabel" name="labelSplitter">
+       <property name="minimumSize">
+        <size>
+         <width>0</width>
+         <height>48</height>
+        </size>
+       </property>
        <property name="maximumSize">
         <size>
          <width>10</width>
@@ -130,14 +127,14 @@
       <widget class="QToolButton" name="toolButtonClear">
        <property name="minimumSize">
         <size>
-         <width>0</width>
-         <height>32</height>
+         <width>48</width>
+         <height>48</height>
         </size>
        </property>
        <property name="maximumSize">
         <size>
          <width>16777215</width>
-         <height>32</height>
+         <height>48</height>
         </size>
        </property>
        <property name="styleSheet">

@@ -1,17 +1,19 @@
+#include <QDebug>
+
 #include "FormCustomSearch2.h"
 #include "ui_FormCustomSearch2.h"
 
 
-FormCustomSearch2::FormCustomSearch2(bool isReadOnly,
-                                     const QString& defaultText,
-                                     QWidget* parent) :
-  QWidget(parent),
-  ui(new Ui::FormCustomSearch2)
+FormCustomSearch2::FormCustomSearch2(QWidget *parent,
+                                     int showLimit)
+  : QWidget(parent)
+  , ui(new Ui::FormCustomSearch2)
+  , mShowLimit(showLimit)
 {
   ui->setupUi(this);
-  ui->textEdit->setReadOnly(!isReadOnly);
-//  ui->textEdit->setPlainText(defaultText);
-  ui->textEdit->setHtml(defaultText);
+
+  mMagnifierGrayIcon = QIcon(":/icons/magnifier_gray_32.png");
+  mMagnifierBlueIcon = QIcon(":/icons/magnifier_blue_32.png");
 
   mFullDict << "i'm gonna write this app" << "take some cake" << "weather" << "don't be shy";
   mFullDict << QString::fromUtf8("Целое большое предложение из слов");
@@ -22,22 +24,26 @@ FormCustomSearch2::~FormCustomSearch2()
   delete ui;
 }
 
-
-void FormCustomSearch2::on_textEdit_textChanged()
+void FormCustomSearch2::SetShowLimit(int showLimit)
 {
-  foreach (auto w, mSearchWidgets) {
-    w->setVisible(false);
-    w->deleteLater();
-  }
-  mSearchWidgets.clear();
+  mShowLimit = showLimit;
+}
+
+void FormCustomSearch2::InitDict(const QStringList& strings)
+{
+  mFullDict = strings;
+}
 
 
-  if (ui->textEdit->toPlainText().isEmpty()) {
-    ui->toolButtonSearch->setIcon(QIcon(":/icons/magnifier_gray_32.png"));
+void FormCustomSearch2::on_lineEdit_textChanged(const QString &st)
+{
+  ClearResults();
+
+  if (st.isEmpty()) {
+    ui->toolButtonSearch->setIcon(mMagnifierGrayIcon);
   } else {
-    ui->toolButtonSearch->setIcon(QIcon(":/icons/magnifier_blue_32.png"));
+    ui->toolButtonSearch->setIcon(mMagnifierBlueIcon);
 
-    QString st = ui->textEdit->toPlainText();
     QStringList matches;
     if (!st.isEmpty()) {
       foreach (const QString& str, mFullDict) {
@@ -46,10 +52,10 @@ void FormCustomSearch2::on_textEdit_textChanged()
         }
       }
     }
-    // todo: search in history
 
     // todo: add limit
-    foreach (QString match, matches) {
+    for (int i=0; i<matches.size() && i<mShowLimit; ++i) {
+      const QString& match = matches.at(i);
 
       int ind = match.indexOf(st);
       QString firstPart = match.mid(0, ind);
@@ -60,19 +66,43 @@ void FormCustomSearch2::on_textEdit_textChanged()
                             "<strong>%2</strong>"
                             "<span style=\"color:#A9A9A9\">%3</span></p>");
 
-      auto w = new FormCustomSearch2(false, txt.arg(firstPart, boldPart, lastPart), this);
+      auto w = new FormCustomSearchResult(txt.arg(firstPart, boldPart, lastPart),
+                                          match, this);
+      connect(w, SIGNAL(MouseReleased(QMouseEvent*)),
+              this, SLOT(OnSearchResultMouseReleased(QMouseEvent*)));
+
       mSearchWidgets << w;
-      ui->layoutMain->addWidget(w);
+      ui->layoutMain->insertWidget(1, w);
+      mSearchResults << match;
     }
   }
 }
 
 void FormCustomSearch2::on_toolButtonClear_clicked()
 {
-  ui->textEdit->clear();
+  ui->lineEdit->clear();
 }
 
 void FormCustomSearch2::on_toolButtonSearch_clicked()
 {
+  // TODO: take all matching string and select approp. objects
+}
 
+void FormCustomSearch2::OnSearchResultMouseReleased(QMouseEvent* event)
+{
+  Q_UNUSED(event)
+
+  if (auto w = qobject_cast<FormCustomSearchResult*>(sender())) {
+    ui->lineEdit->setText(w->GetResultText());
+  }
+}
+
+void FormCustomSearch2::ClearResults()
+{
+  foreach (auto w, mSearchWidgets) {
+    w->setVisible(false);
+    w->deleteLater();
+  }
+  mSearchWidgets.clear();
+  mSearchResults.clear();
 }
