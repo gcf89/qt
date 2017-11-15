@@ -1,0 +1,12 @@
+<RCC>
+    <qresource prefix="/data">
+        <file>word_rus.txt</file>
+    </qresource>
+    <qresource prefix="/icons">
+        <file>clear_32.png</file>
+        <file>magnifier_blue_32.png</file>
+        <file>splitter_32.png</file>
+        <file>pin_32.png</file>
+        <file>magnifier_gray_32.png</file>
+    </qresource>
+</RCC>
